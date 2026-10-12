@@ -8,8 +8,8 @@ Este directorio contiene los artefactos de calidad, suites de prueba manuales y 
 
 ## Contenido de la Carpeta
 
-- **`coleccion_postman.json`**: Colección ejecutable en Postman (Collection v2.1) estructurada modularmente en 4 suites de prueba: *Usuarios*, *Categorías*, *Hábitos* y *Registros*.
-- **`bugs_encontrados.md`**: Registro detallado de defectos e incidencias (Defect Tracking Log) identificados durante la ejecución de pruebas REST, especificando comportamiento esperado, comportamiento obtenido, análisis técnico y estado de resolución.
+- **`postman_collection.json`**: Colección ejecutable en Postman (Collection v2.1) estructurada modularmente en 4 suites de prueba: *Usuarios*, *Categorías*, *Hábitos* y *Registros*.
+- **`bugs_found.md`**: Registro detallado de defectos e incidencias (Defect Tracking Log) identificados durante la ejecución de pruebas REST, especificando comportamiento esperado, comportamiento obtenido, análisis técnico y estado de resolución.
 
 ---
 

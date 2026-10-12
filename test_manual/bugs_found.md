@@ -1,7 +1,7 @@
 # Bugs Found — Pruebas manuales Backend Grupo 01
 
 Documento de seguimiento de bugs encontrados durante las pruebas con Postman/Swagger.
-Responsable de pruebas: Patricio Salazar (QA)
+Responsable de pruebas: Patricio Salazar (QA), con reproducción técnica de Ariel y revisión de integración de Beatriz.
 
 ---
 
@@ -23,7 +23,7 @@ Responsable de pruebas: Patricio Salazar (QA)
 - **Resultado obtenido (antes del fix):** `422 Unprocessable Entity` — "Add missing query parameter", incluso con un body JSON válido.
 - **Causa raíz:** Las funciones `crear_usuario(datos)` y `actualizar_usuario(usuario_id, datos)` no tenían tipo declarado (`datos: UsuarioCreate`), por lo que FastAPI interpretaba `datos` como query parameter en vez de body.
 - **Solución aplicada:** Se agregó `usuario_schema.py` (con `UsuarioCreate`, `UsuarioUpdate`, `UsuarioResponse`) y se tipó el parámetro en el router.
-- **Responsable:** Ariel (routers) + Josefa (schemas)
+- **Responsable:** Ariel (routers) + Beatriz (schemas)
 
 ---
 
