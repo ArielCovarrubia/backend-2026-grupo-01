@@ -3,9 +3,9 @@ from fastapi import APIRouter
 from app.schemas.categoria_schema import (
     CategoriaCreate,
     CategoriaResponse,
+    CategoriaUpdate,
 )
 from app.services import categoria_service
-
 
 router = APIRouter(
     prefix="/categorias",
@@ -13,13 +13,26 @@ router = APIRouter(
 )
 
 
-@router.get( "/", response_model=list[CategoriaResponse],)
+@router.get("/", response_model=list[CategoriaResponse])
 def listar_categorias():
-    """Devuelve todas las categorías disponibles."""
     return categoria_service.listar_categorias()
 
 
-@router.post( "/", response_model=CategoriaResponse, status_code=201,)
+@router.get("/{categoria_id}", response_model=CategoriaResponse)
+def obtener_categoria(categoria_id: int):
+    return categoria_service.obtener_categoria(categoria_id)
+
+
+@router.post("/", response_model=CategoriaResponse, status_code=201)
 def crear_categoria(datos: CategoriaCreate):
-    """Crea una categoría nueva."""
     return categoria_service.crear_categoria(datos)
+
+
+@router.put("/{categoria_id}", response_model=CategoriaResponse)
+def actualizar_categoria(categoria_id: int, datos: CategoriaUpdate):
+    return categoria_service.actualizar_categoria(categoria_id, datos)
+
+
+@router.delete("/{categoria_id}", status_code=204)
+def eliminar_categoria(categoria_id: int):
+    categoria_service.eliminar_categoria(categoria_id)

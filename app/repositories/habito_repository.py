@@ -24,6 +24,14 @@ def listar_por_usuario(usuario_id: int) -> list[Habito]:
     return [h for h in _habitos.values() if h.usuario_id == usuario_id]
 
 
+def listar_por_categoria(categoria_id: int) -> list[Habito]:
+    return [h for h in _habitos.values() if h.categoria_id == categoria_id]
+
+
+def existe_por_categoria(categoria_id: int) -> bool:
+    return any(h.categoria_id == categoria_id for h in _habitos.values())
+
+
 def actualizar(habito_id: int, habito: Habito) -> Habito | None:
     if habito_id not in _habitos:
         return None
