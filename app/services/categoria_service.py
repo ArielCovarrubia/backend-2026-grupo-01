@@ -29,6 +29,7 @@ def crear_categoria(datos: CategoriaCreate):
         id=0,
         nombre=datos.nombre,
         descripcion=datos.descripcion,
+        activa=True
     )
 
     return categoria_repository.guardar(categoria)

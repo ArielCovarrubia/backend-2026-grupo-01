@@ -15,6 +15,8 @@ def guardar(categoria: Categoria) -> Categoria:
 def listar() -> list[Categoria]:
     return list(_categorias.values())
 
+def listar_activas() -> list[Categoria]:
+    return [c for c in _categorias.values() if c.activa]
 
 def obtener(categoria_id: int) -> Categoria | None:
     return _categorias.get(categoria_id)

@@ -1,12 +1,13 @@
-from pydantic import BaseModel, Field
- 
- 
+from pydantic import BaseModel, Field, ConfigDict
+
 class CategoriaCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+    
     nombre: str = Field(..., min_length=3, max_length=30)     
     descripcion: str = Field(..., max_length=200)
- 
- 
+
 class CategoriaResponse(BaseModel):
     id: int
     nombre: str
     descripcion: str
+    activa: bool
