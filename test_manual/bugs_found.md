@@ -74,3 +74,32 @@ Responsable de pruebas: Patricio Salazar (QA), con reproducción técnica de Ari
 - El proyecto cambió su estructura de carpetas de `App/`, `Domain/`, `Repositories/` (mayúscula) a `app/`, `domain/`, `repositories/` (minúscula) durante el desarrollo. Verificar que todos los imports en el proyecto sean consistentes con la nueva convención en minúscula.
 - Comando actualizado para levantar el servidor: `uvicorn app.main:app --reload` (ejecutado desde la raíz del proyecto).
 - Al almacenarse los datos en estructuras en memoria (`dict`), **los datos se limpian al reiniciar el servidor**. Para realizar pruebas end-to-end completas se deben crear primero las entidades padre (`usuarios`, `categorias`) antes de crear dependientes (`habitos`, `registros`).
+
+---
+
+## Bugs de la etapa 2 (detectados con la colección Postman y `tests/`)
+
+Cada bug tiene una prueba `xfail(strict=True)` en `tests/test_bugs_conocidos.py`. Cuando el bug se corrija, la prueba pasará a XPASS y fallará por `strict`, avisando que hay que quitar el marcador.
+
+| # | Severidad | Endpoint | Esperado | Obtenido | Responsable sugerido |
+| --- | --- | --- | --- | --- | --- |
+| 6 | Media | `POST /usuarios/`, `PUT /usuarios/{id}` | `Ana@x.cl` y `ana@x.cl` se consideran el mismo correo (409) | Ambos se crean (201): `obtener_por_email` compara sensible a mayúsculas | Ariel (repositorio/service) |
+| 7 | Alta | `DELETE /usuarios/{id}` | Rechazar (409) o eliminar en cascada | 204; los hábitos y registros del usuario quedan huérfanos y siguen visibles | Ariel |
+| 8 | Baja | `POST /habitos/` | No permitir hábitos en categorías con `activa=false` | 201 | Ariel (service) |
+| 9 | Baja | `POST /registros/` | No permitir registros sobre hábitos `ARCHIVADO` | 201 | Ariel (service) |
+| 10 | Baja | `GET /habitos/?estado=xyz` | 400/422 por estado inválido | 200 con lista vacía (`orden` sí se valida) | Ariel |
+| 11 | Baja | `POST/PUT /registros/` | `nota` de solo espacios rechazada o normalizada | Se acepta; `registro_schema.py` no tiene `str_strip_whitespace` | Beatriz (schemas) |
+| 12 | Media | Todos los errores | Formato `{"detail": {"code", "message"}}` según la guía de la etapa | Se devuelve `{"error": {"code", "message", "details"}}`; hay que acordar cuál es el contrato oficial y actualizar README/pruebas | Ariel + Beatriz |
+
+### Observaciones (no son bugs, conviene confirmarlas con el equipo)
+
+- Eliminar una categoría con hábitos asociados responde **400** (`BUSINESS_RULE_ERROR`), no 409. Además, un hábito archivado sigue contando como "asociado", por lo que esa categoría nunca se podrá eliminar.
+- Un hábito archivado bloquea volver a crear un hábito con el mismo nombre para ese usuario (409).
+- `PUT /usuarios/{id}` con `{}` responde 200 sin cambios.
+- `GET /categorias/` no ofrece filtros ni paginación (solo `GET /habitos/` los tiene).
+- README: la tabla de contrato aún no lista `GET/PUT/DELETE /categorias/{id}`.
+
+## Cómo se verificó
+
+- `pytest`: 97 pruebas pasan y 7 `xfail` documentan los bugs anteriores.
+- Colección Postman ejecutada completa contra `uvicorn` real: 38 solicitudes, 0 fallos. Cada solicitud guarda los IDs que crea en variables de colección y usa `{{$timestamp}}` en emails/nombres, por lo que se puede ejecutar varias veces sin reiniciar el servidor.
