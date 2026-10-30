@@ -10,7 +10,16 @@ from app.domain.exceptions import (
     RecursoNoEncontradoError,
     ReglaNegocioError,
 )
-from app.routers import categorias, habitos, registros, usuarios
+from app.infrastructure.database import Base, engine
+from app.infrastructure.models import (
+    CategoriaModel,
+    HabitoModel,
+    RegistroHabitoModel,
+    UsuarioModel,
+)
+from app.presentation.routers import categorias, habitos, registros, usuarios
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
