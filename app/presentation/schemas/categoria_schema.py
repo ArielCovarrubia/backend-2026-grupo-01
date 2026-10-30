@@ -21,4 +21,4 @@ class CategoriaResponse(BaseModel):
     nombre: str
     descripcion: str
     activa: bool
-
+    orden_prioridad: int 
