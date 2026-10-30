@@ -7,7 +7,8 @@ class Categoria:
     nombre: str
     descripcion: str
     activa: bool = True 
-
+    orden_prioridad: int = 1
+    
     def activar(self) -> None:
         """Método de dominio para activar la categoría."""
         self.activa = True
