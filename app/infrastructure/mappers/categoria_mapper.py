@@ -8,6 +8,7 @@ def categoria_a_dominio(model: CategoriaModel) -> Categoria:
         nombre=model.nombre,
         descripcion=model.descripcion,
         activa=model.activa,
+        orden_prioridad=model.orden_prioridad, 
     )
 
 
@@ -17,5 +18,6 @@ def categoria_a_modelo(entity: Categoria) -> CategoriaModel:
         nombre=entity.nombre,
         descripcion=entity.descripcion,
         activa=entity.activa,
+        orden_prioridad=entity.orden_prioridad, 
     )
 

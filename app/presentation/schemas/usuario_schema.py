@@ -22,4 +22,4 @@ class UsuarioResponse(BaseModel):
     name: str
     email: EmailStr
     fecha_registro: datetime
-
+    zona_horaria: str  

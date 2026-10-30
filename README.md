@@ -16,12 +16,12 @@ Desarrollo_de_Backend (ICINF1108) 2026 - grupo 01
 
 La distribución se actualizó para trabajar con tres integrantes. La salida de Josefa no elimina sus aportes ya integrados: el mantenimiento de dominio y esquemas queda a cargo de Beatriz, mientras que Ariel asume también los repositorios en memoria. Patricio conserva QA y agrega la matriz de aceptación para que cada requisito tenga una prueba asociada.
 
-| Área o archivo | Responsable principal | Apoyo y revisión |
+Área o archivo | Responsable principal | Apoyo y revisión |
 | --- | --- | --- |
 | `app/domain/` y `app/schemas/` | Beatriz | Ariel revisa compatibilidad con services |
-| `app/repositories/` | Ariel | Beatriz revisa el modelo de datos |
-| `app/routers/` y `app/services/` | Ariel | Beatriz revisa integración |
-| `app/main.py` | Beatriz | Ariel verifica registro de routers |
+| `app/infrastructure/` (BD, modelos, mappers) | Beatriz | Ariel valida integración ORM |
+| `app/repositories/` y `app/services/` | Ariel | Beatriz revisa consistencia de datos |
+| `app/routers/` y `app/main.py` | Ariel | Beatriz verifica registro de rutas |
 | Swagger/OpenAPI | Ariel | Beatriz revisa el contrato |
 | `test_manual/` | Patricio | Ariel reproduce los casos técnicos |
 | `README.md` | Beatriz | Patricio revisa requisitos y enlaces |
@@ -39,9 +39,9 @@ La distribución se actualizó para trabajar con tres integrantes. La salida de 
 
 La evidencia de contribución debe mantenerse en commits separados por tarea, ramas personales y pull requests revisadas. No se deben crear commits a nombre de Josefa después de su salida.
 
-## Requerimientos
->asegurese de cumplir con los requerimientos establecidos para poder llevar a cabo de forma exitosa la Ejecución del proyecto
+> Asegúrese de cumplir con los requerimientos establecidos para poder llevar a cabo de forma exitosa la ejecución del proyecto.
 - [uv](https://docs.astral.sh/uv/) (probado con UV 0.12.13)
+- Python >= 3.14 (probado en python 3.14.7)
 
 ## Descripción breve del proyecto
 Este proyecto está centralizado en solucionar la dificultad de medir el progreso del bienestar diario (ejercicio, sueño, alimentación) a causa de registros desorganizados en notas sueltas, llevándose a cabo con la ayuda de una API REST en Python y FastAPI que permite gestionar usuarios, registrar el cumplimiento diario y consultar el historial mediante filtros y paginación.
@@ -51,26 +51,84 @@ Este proyecto está centralizado en solucionar la dificultad de medir el progres
 - FastAPI
 - Pydantic
 - Uvicorn
+- SQLAlchemy (ORM)
+- Alembic (Migraciones)
 
-## Almacenamiento
-En memoria mediante diccionarios
+## Arquitectura por Capas
+El proyecto implementa una estricta separación por responsabilidades para garantizar la modularidad, testeabilidad y mantenimiento[cite: 6]:
+- **Presentation (`app/presentation/`)**: Gestiona la interacción HTTP mediante `routers` y valida estructuras de entrada/salida utilizando esquemas DTO con Pydantic[cite: 6]. Se encarga también de la inyección de dependencias de base de datos (`get_db`)[cite: 6].
+- **Application (`app/application/`)**: Contiene los `services` que coordinan la lógica de negocio y los casos de uso, conectando las peticiones HTTP con las reglas del dominio y la persistencia[cite: 6].
+- **Domain (`app/domain/`)**: Aloja las entidades puras del dominio, enumeraciones y reglas de negocio, siendo completamente independiente del framework y de la base de datos[cite: 6].
+- **Infrastructure (`app/infrastructure/`)**: Implementa la conexión y gestión de la base de datos con SQLAlchemy (`database.py`), los modelos ORM (`models/`), los mappers de conversión (`mappers/`), el acceso a datos (`repositories/`), los seeders iniciales (`seeders/`) y las migraciones versionadas con Alembic (`migrations/`)[cite: 6].
 
+## Recorrido de una Petición
+Para seguir el flujo de una solicitud a través de las capas de la aplicación (ej. `GET /categorias/`):
+1. **Presentación**: La solicitud llega al `router` en `app/presentation/routers/categorias.py`, validando el esquema de entrada o parámetros de consulta.
+2. **Aplicación**: El router delega la ejecución al servicio correspondiente en `app/application/services/categoria_service.py`.
+3. **Dominio / Lógica**: El servicio ejecuta las reglas de negocio e interactúa con las entidades de la capa de dominio.
+4. **Infraestructura**: El servicio invoca al repositorio correspondiente, el cual utiliza SQLAlchemy sobre la base de datos. Los `mappers` traducen el modelo ORM al objeto de dominio, y el esquema DTO serializa la respuesta final devuelta al cliente.
+
+## Diagrama de Clases (Dominio)
+```
+classDiagram
+    class Usuario {
+        +int id
+        +string name
+        +string email
+        +datetime fecha_registro
+        +string zona_horaria
+    }
+    class Categoria {
+        +int id
+        +string nombre
+        +string descripcion
+        +bool activa
+        +int orden_prioridad
+        +activar()
+        +desactivar()
+    }
+    class Habito {
+        +int id
+        +int usuario_id
+        +int categoria_id
+        +string nombre
+        +int frecuencia_semanal
+        +EstadoHabito estado
+        +datetime fecha_creacion
+        +esta_activo() bool
+        +archivar()
+    }
+    class RegistroHabito {
+        +int id
+        +int habito_id
+        +date fecha_registro
+        +bool completado
+        +float valor_medido
+        +string nota
+        +datetime creado_en
+        +es_fecha_futura() bool
+    }
+
+    Usuario "1" -- "*" Habito : posee
+    Categoria "1" -- "*" Habito : categoriza
+    Habito "1" -- "*" RegistroHabito : tiene
+```
 ## Estructura del proyecto
 El proyecto sigue una arquitectura separada por responsabilidades para evitar que las rutas contengan la lógica principal
 
 ```text
 app/
+  application/      # Casos de uso y lógica de negocio (services)
   domain/           # Entidades y reglas del dominio  
-  repositories/     # Almacenamiento en memoria (listas/diccionarios)
-  routers/          # Definición de rutas/endpoints
-  schemas/          # Definición de DTOs y validaciones de entrada/salida
-  services/         # Casos de uso y lógica de negocio
-  main.py           # Crea y configura la aplicación; recibe solicitudes HTTP
+  infrastructure/   # Base de datos, modelos ORM, mappers, repositorios y seeders
+  presentation/     # Controladores HTTP (routers), DTOs (schemas) y dependencias
+  main.py           # Ensamblaje y configuración principal de FastAPI
+migrations/         # Migraciones versionadas con Alembic
 test_manual/        # Colección Postman y registro de bugs
+tests/              # Pruebas automatizadas con pytest
 pyproject.toml      # Listado de dependencias
+uv.lock             # Archivo de bloqueo de versiones
 README.md           # Documentación principal
-uv.lock             # Archivo de bloqueo de versiones de dependencias
-
 ```
 
 ## Ejecución del proyecto
@@ -78,7 +136,7 @@ Para ejecutar este proyecto localmente desde una copia limpia utilizando `uv`, s
 
 ### Clonar el repositorio y entrar a la carpeta:
 ```bash
-git clone https://github.com/jobbinnie/backend-2026-grupo-01.git
+git clone https://github.com/ArielCovarrubia/backend-2026-grupo-01.git
 cd backend-2026-grupo-01
 ```
 
@@ -145,13 +203,12 @@ deactivate
 | Criterio | Estado | Evidencia |
 | --- | --- | --- |
 | Responsabilidades asignadas para tres integrantes | Listo | Tabla de distribución anterior |
-| Clonación y ejecución desde README | Listo | `uv sync` y `uv run uvicorn app.main:app --reload` |
-| Al menos 12 endpoints identificables y ejecutables | Listo | Contrato de 17 endpoints y colección Postman |
-| CRUD completo para una entidad | Listo | Usuarios: POST, GET, GET por ID, PUT y DELETE |
-| Cuatro entidades, atributos, IDs y relación 1:N | Listo | Usuario, Categoría, Hábito y RegistroHabito |
-| Validaciones y reglas de negocio | Listo | Schemas y services; casos en QA |
-| Filtrado, ordenamiento y paginación | Listo | `GET /habitos/`, en ese orden |
-| Almacenamiento en memoria y sin credenciales reales | Listo | Repositorios basados en diccionarios |
-| README completo | Listo | Instalación, estructura, equipo y contrato |
+| Clonación y ejecución desde README | Listo | `uv sync` y comandos de ejecución documentados |
+| Al menos 12 endpoints identificables y ejecutables | Listo | Más de 15 endpoints funcionales y contrato OpenAPI |
+| CRUD completo para una entidad | Listo | CRUD en Usuarios, Categorías, Hábitos y Registros |
+| Cuatro entidades, atributos, IDs y relación 1:N | Listo | Usuario, Categoría, Hábito y RegistroHabito con relaciones ORM |
+| Validaciones y reglas de negocio | Listo | Schemas, Pydantic y Services |
+| Filtrado, ordenamiento y paginación | Listo | `GET /habitos/` con metadatos completos |
+| Persistencia real y migraciones / seeders | Listo | SQLAlchemy, Alembic y Seeders ejecutables |
+| README completo | Listo | Instalación, arquitectura, diagramas y contrato |
 | Colección importable | Listo | `test_manual/postman_collection.json` |
-| Evidencia Git de los tres integrantes actuales | Pendiente de verificar | Commits, ramas y pull requests de la etapa 2 |
