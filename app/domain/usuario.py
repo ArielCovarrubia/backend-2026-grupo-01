@@ -9,3 +9,4 @@ class Usuario:
     name: str
     email: str
     fecha_registro: datetime = field(default_factory=datetime.now)
+    zona_horaria: str = "America/Santiago"
