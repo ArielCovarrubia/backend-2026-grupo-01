@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repositories import (
+from app.infrastructure.repositories import (
     categoria_repository,
     habito_repository,
     registro_repository,
