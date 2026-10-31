@@ -134,7 +134,7 @@ def varios(client, usuario, categoria):
 
 def _nombres(r):
     assert r.status_code == 200, r.text
-    return [h["nombre"] for h in r.json()]
+    return [h["nombre"] for h in r.json()["items"]]
 
 
 def test_listar_habitos_orden_por_defecto_es_nombre(client, varios):
@@ -181,6 +181,21 @@ def test_paginacion(client, varios):
     assert p1 == ["Abdominales", "Correr", "Dormir temprano"]
     assert p2 == ["Yoga"]
     assert p3 == []
+
+
+def test_paginacion_incluye_metadatos(client, varios):
+    r = client.get("/habitos/", params={"pagina": 2, "tamano_pagina": 3})
+    cuerpo = r.json()
+    assert cuerpo["total"] == 4
+    assert cuerpo["pagina"] == 2
+    assert cuerpo["limite"] == 3
+    assert cuerpo["total_paginas"] == 2
+    assert len(cuerpo["items"]) == 1
+
+
+def test_paginacion_sin_resultados_tiene_una_pagina(client):
+    cuerpo = client.get("/habitos/").json()
+    assert cuerpo == {"items": [], "total": 0, "pagina": 1, "limite": 10, "total_paginas": 1}
 
 
 def test_orden_invalido(client, varios):

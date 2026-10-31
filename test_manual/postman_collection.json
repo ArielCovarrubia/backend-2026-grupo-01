@@ -161,6 +161,51 @@
               }
             }
           ]
+        },
+        {
+          "name": "Crear Usuario descartable",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Temporal\",\n  \"email\": \"temporal{{$timestamp}}@alu.uct.cl\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('usuario_temp_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1392,7 +1437,7 @@
           ]
         },
         {
-          "name": "Eliminar Usuario",
+          "name": "[409] Eliminar Usuario con hábitos asociados",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1404,6 +1449,36 @@
               "path": [
                 "usuarios",
                 "{{usuario_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Formato de error CONFLICT', () => pm.expect(pm.response.json().error.code).to.eql('CONFLICT'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar Usuario descartable",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_temp_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuario_temp_id}}"
               ]
             }
           },
@@ -1426,13 +1501,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "raw": "{{base_url}}/usuarios/{{usuario_temp_id}}",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "usuarios",
-                "{{usuario_id}}"
+                "{{usuario_temp_id}}"
               ]
             }
           },
@@ -1492,6 +1567,10 @@
     },
     {
       "key": "fecha_futura",
+      "value": ""
+    },
+    {
+      "key": "usuario_temp_id",
       "value": ""
     }
   ]

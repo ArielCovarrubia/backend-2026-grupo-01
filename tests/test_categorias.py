@@ -4,7 +4,12 @@ from tests.conftest import assert_error
 def test_crear_categoria(client):
     r = client.post("/categorias/", json={"nombre": "  Sueño  ", "descripcion": "Dormir bien"})
     assert r.status_code == 201
-    assert r.json() == {"id": 1, "nombre": "Sueño", "descripcion": "Dormir bien", "activa": True}
+    cuerpo = r.json()
+    assert cuerpo["id"] == 1
+    assert cuerpo["nombre"] == "Sueño"
+    assert cuerpo["descripcion"] == "Dormir bien"
+    assert cuerpo["activa"] is True
+    assert "orden_prioridad" in cuerpo
 
 
 def test_listar_categorias(client, categoria):
