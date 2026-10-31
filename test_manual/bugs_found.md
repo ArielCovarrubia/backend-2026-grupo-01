@@ -79,17 +79,18 @@ Responsable de pruebas: Patricio Salazar (QA), con reproducción técnica de Ari
 
 ## Bugs de la etapa 2 (detectados con la colección Postman y `tests/`)
 
-Cada bug tiene una prueba `xfail(strict=True)` en `tests/test_bugs_conocidos.py`. Cuando el bug se corrija, la prueba pasará a XPASS y fallará por `strict`, avisando que hay que quitar el marcador.
+Los bugs abiertos 10, 11 y 12 tienen una prueba `xfail(strict=True)` en `tests/test_bugs_conocidos.py`: cuando se corrijan, la prueba pasará a XPASS y fallará por `strict`, avisando que hay que quitar el marcador. Los bugs corregidos (6 a 9) quedaron como pruebas normales con el prefijo `test_corregido_`. El bug 13 solo se puede comprobar con el servidor real, ver `casos_prueba_e5.md`.
 
-| # | Severidad | Endpoint | Esperado | Obtenido | Responsable sugerido |
-| --- | --- | --- | --- | --- | --- |
-| 6 | Media | `POST /usuarios/`, `PUT /usuarios/{id}` | `Ana@x.cl` y `ana@x.cl` se consideran el mismo correo (409) | Ambos se crean (201): `obtener_por_email` compara sensible a mayúsculas | Ariel (repositorio/service) |
-| 7 | Alta | `DELETE /usuarios/{id}` | Rechazar (409) o eliminar en cascada | 204; los hábitos y registros del usuario quedan huérfanos y siguen visibles | Ariel |
-| 8 | Baja | `POST /habitos/` | No permitir hábitos en categorías con `activa=false` | 201 | Ariel (service) |
-| 9 | Baja | `POST /registros/` | No permitir registros sobre hábitos `ARCHIVADO` | 201 | Ariel (service) |
-| 10 | Baja | `GET /habitos/?estado=xyz` | 400/422 por estado inválido | 200 con lista vacía (`orden` sí se valida) | Ariel |
-| 11 | Baja | `POST/PUT /registros/` | `nota` de solo espacios rechazada o normalizada | Se acepta; `registro_schema.py` no tiene `str_strip_whitespace` | Beatriz (schemas) |
-| 12 | Media | Todos los errores | Formato `{"detail": {"code", "message"}}` según la guía de la etapa | Se devuelve `{"error": {"code", "message", "details"}}`; hay que acordar cuál es el contrato oficial y actualizar README/pruebas | Ariel + Beatriz |
+| # | Estado | Severidad | Endpoint | Esperado | Obtenido | Responsable sugerido |
+| --- | --- | --- | --- | --- | --- | --- |
+| 6 | Corregido | Media | `POST /usuarios/`, `PUT /usuarios/{id}` | `Ana@x.cl` y `ana@x.cl` se consideran el mismo correo (409) | Ambos se creaban (201): el email se comparaba sensible a mayúsculas | Ariel |
+| 7 | Corregido | Alta | `DELETE /usuarios/{id}` | Rechazar (409) o eliminar en cascada | Se eliminaba (204) dejando hábitos y registros huérfanos. Ahora responde 409 si el usuario tiene hábitos | Ariel |
+| 8 | Corregido | Baja | `POST /habitos/` | No permitir hábitos en categorías con `activa=false` | Se creaba (201) | Ariel |
+| 9 | Corregido | Baja | `POST /registros/` | No permitir registros sobre hábitos `ARCHIVADO` | Se creaba (201) | Ariel |
+| 10 | Abierto | Baja | `GET /habitos/?estado=xyz` | 400/422 por estado inválido | 200 con lista vacía (`orden` sí se valida) | Ariel |
+| 11 | Abierto | Baja | `POST/PUT /registros/` | `nota` de solo espacios rechazada o normalizada | Se acepta; `registro_schema.py` no tiene `str_strip_whitespace` | Beatriz |
+| 12 | Abierto | Media | Todos los errores | Formato `{"detail": {"code", "message"}}` según la guía de la etapa | Se devuelve `{"error": {"code", "message", "details"}}`; hay que acordar cuál es el contrato oficial | Ariel y Beatriz |
+| 13 | Abierto | Alta | Toda la API | Los datos persisten en la base de datos: sobreviven al reinicio del servidor y los seeders son visibles por la API | Los repositorios de `app/infrastructure/repositories/` siguen usando diccionarios en memoria. Al reiniciar el servidor se pierden los datos y los 3 usuarios cargados por el seeder nunca aparecen en `GET /usuarios/` (la tabla sí los tiene) | Ariel (repositorios) y Beatriz (modelos y mappers) |
 
 ### Observaciones (no son bugs, conviene confirmarlas con el equipo)
 
@@ -97,9 +98,10 @@ Cada bug tiene una prueba `xfail(strict=True)` en `tests/test_bugs_conocidos.py`
 - Un hábito archivado bloquea volver a crear un hábito con el mismo nombre para ese usuario (409).
 - `PUT /usuarios/{id}` con `{}` responde 200 sin cambios.
 - `GET /categorias/` no ofrece filtros ni paginación (solo `GET /habitos/` los tiene).
-- README: la tabla de contrato aún no lista `GET/PUT/DELETE /categorias/{id}`.
+- README: la tabla de contrato aún no lista `GET/PUT/DELETE /categorias/{id}` y `GET /habitos/` ahora devuelve `{items, total, pagina, limite, total_paginas}`.
+- Eliminar un usuario que solo tiene hábitos archivados también responde 409, igual que con las categorías.
 
 ## Cómo se verificó
 
-- `pytest`: 97 pruebas pasan y 7 `xfail` documentan los bugs anteriores.
-- Colección Postman ejecutada completa contra `uvicorn` real: 38 solicitudes, 0 fallos. Cada solicitud guarda los IDs que crea en variables de colección y usa `{{$timestamp}}` en emails/nombres, por lo que se puede ejecutar varias veces sin reiniciar el servidor.
+- `pytest`: 103 pruebas pasan y 3 `xfail` documentan los bugs abiertos 10, 11 y 12.
+- Colección Postman ejecutada completa contra `uvicorn` real, desde una base nueva con migraciones y seeders: 40 solicitudes, 0 fallos, dos ejecuciones seguidas. Cada solicitud guarda los IDs que crea en variables de colección y usa `{{$timestamp}}` en emails/nombres, por lo que se puede ejecutar varias veces sin reiniciar el servidor.
