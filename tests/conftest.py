@@ -1,17 +1,23 @@
+import os
+import tempfile
 from datetime import date, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
+_directorio_temporal = tempfile.mkdtemp(prefix="habitos_tests_")
+os.environ["DATABASE_URL"] = f"sqlite:///{_directorio_temporal}/test.db"
+
+from app.infrastructure.database import Base, engine
 from app.infrastructure.repositories import (
     categoria_repository,
     habito_repository,
     registro_repository,
     usuario_repository,
 )
+from app.main import app
 
-REPOSITORIOS = {
+ALMACENES_EN_MEMORIA = {
     usuario_repository: "_usuarios",
     categoria_repository: "_categorias",
     habito_repository: "_habitos",
@@ -19,17 +25,21 @@ REPOSITORIOS = {
 }
 
 
-def _limpiar_repositorios() -> None:
-    for repo, nombre_dict in REPOSITORIOS.items():
-        getattr(repo, nombre_dict).clear()
-        repo._contador_id = 0
+def _limpiar_almacenes_en_memoria() -> None:
+    for repo, nombre in ALMACENES_EN_MEMORIA.items():
+        if hasattr(repo, nombre):
+            getattr(repo, nombre).clear()
+            repo._contador_id = 0
 
 
 @pytest.fixture(autouse=True)
-def limpiar_almacenamiento():
-    _limpiar_repositorios()
+def base_de_datos_limpia():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    _limpiar_almacenes_en_memoria()
     yield
-    _limpiar_repositorios()
+    _limpiar_almacenes_en_memoria()
+    Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture
