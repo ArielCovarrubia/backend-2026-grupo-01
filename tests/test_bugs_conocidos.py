@@ -1,5 +1,7 @@
 import pytest
 
+from tests.conftest import assert_error
+
 
 def test_corregido_email_duplicado_ignora_mayusculas(client):
     client.post("/usuarios/", json={"name": "Ana", "email": "Ana@x.cl"})
@@ -27,18 +29,11 @@ def test_corregido_no_crear_registro_en_habito_archivado(client, habito, ayer):
     assert r.status_code >= 400
 
 
-@pytest.mark.xfail(strict=True, reason="Bug 10: filtro estado inválido devuelve 200 en vez de error")
-def test_filtro_estado_invalido_es_error(client):
-    assert client.get("/habitos/", params={"estado": "xyz"}).status_code in (400, 422)
+def test_corregido_filtro_estado_invalido_es_error(client):
+    assert_error(client.get("/habitos/", params={"estado": "xyz"}), 400, "BUSINESS_RULE_ERROR")
 
 
 @pytest.mark.xfail(strict=True, reason="Bug 11: nota compuesta solo por espacios se acepta")
 def test_nota_solo_espacios_se_rechaza(client, habito, ayer):
     r = client.post("/registros/", json={"habito_id": habito["id"], "fecha_registro": ayer, "nota": "     "})
     assert r.status_code == 422
-
-
-@pytest.mark.xfail(strict=True, reason="Bug 12: el error no usa {'detail': {'code','message'}} como pide la guía")
-def test_formato_error_segun_guia(client):
-    cuerpo = client.get("/usuarios/999").json()
-    assert "detail" in cuerpo and {"code", "message"} <= set(cuerpo["detail"])
