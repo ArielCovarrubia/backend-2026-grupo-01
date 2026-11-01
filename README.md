@@ -14,7 +14,7 @@ Desarrollo_de_Backend (ICINF1108) 2026 - grupo 01
 
 ### Redistribución por la salida de una integrante
 
-La distribución se actualizó para trabajar con tres integrantes. La salida de Josefa no elimina sus aportes ya integrados: el mantenimiento de dominio y esquemas queda a cargo de Beatriz, mientras que Ariel asume también los repositorios en memoria. Patricio conserva QA y agrega la matriz de aceptación para que cada requisito tenga una prueba asociada.
+La distribución se actualizó para trabajar con tres integrantes. La salida de Josefa no elimina sus aportes ya integrados: el mantenimiento de dominio y esquemas queda a cargo de Beatriz, mientras que Ariel asume también los repositorios y su conexión con la base de datos. Patricio conserva QA y agrega la matriz de aceptación para que cada requisito tenga una prueba asociada.
 
 Área o archivo | Responsable principal | Apoyo y revisión |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ La distribución se actualizó para trabajar con tres integrantes. La salida de 
 | Tarea | Responsable | Evidencia de término |
 | --- | --- | --- |
 | Revisar entidades, DTOs y validaciones tras la redistribución | Beatriz | Cambios revisados en `domain/` y `presentation/schemas/` |
-| Revisar repositorios y consistencia del almacenamiento en memoria | Ariel | CRUD y referencias entre entidades verificados |
+| Conectar los repositorios a la base de datos con SQLAlchemy | Ariel | CRUD persistente y referencias entre entidades verificados |
 | Completar o mantener docstrings de cada endpoint | Ariel | Operaciones visibles y explicadas en `/docs` |
 | Ejecutar la colección completa y actualizar defectos | Patricio | `postman_collection.json` y `bugs_found.md` actualizados |
 | Verificar los diez criterios de evaluación y documentar pendientes | Patricio | Matriz de aceptación en este README |
@@ -66,7 +66,7 @@ Para seguir el flujo de una solicitud a través de las capas de la aplicación (
 1. **Presentación**: La solicitud llega al `router` en `app/presentation/routers/categorias.py`, validando el esquema de entrada o parámetros de consulta.
 2. **Aplicación**: El router delega la ejecución al servicio correspondiente en `app/application/services/categoria_service.py`.
 3. **Dominio / Lógica**: El servicio ejecuta las reglas de negocio e interactúa con las entidades de la capa de dominio.
-4. **Infraestructura**: El servicio invoca al repositorio correspondiente, el cual utiliza SQLAlchemy sobre la base de datos. Los `mappers` traducen el modelo ORM al objeto de dominio, y el esquema DTO serializa la respuesta final devuelta al cliente.
+4. **Infraestructura**: El servicio invoca al repositorio correspondiente con la sesión de base de datos que el router recibe por inyección de dependencias (`Depends(get_db)`). El repositorio consulta la base con SQLAlchemy. Los `mappers` traducen el modelo ORM al objeto de dominio, y el esquema DTO serializa la respuesta final devuelta al cliente.
 
 ## Diagrama de Clases (Dominio)
 ```mermaid
@@ -299,10 +299,10 @@ deactivate
 | Usuario | PUT | `/usuarios/{usuario_id}` | Actualizar los datos de un usuario existente | **Path**: `usuario_id` (int)<br>**Body**: `UsuarioUpdate` | 200 OK<br>`UsuarioResponse` |
 | Usuario | DELETE | `/usuarios/{usuario_id}` | Eliminar un usuario del sistema | **Path**: `usuario_id` (int) | 204 No Content |
 | Hábitos | POST | `/habitos/` | Registrar un nuevo hábito saludable | **Body**: `HabitoCreate` | 201 Created<br>`HabitoResponse` |
-| Hábitos | GET | `/habitos/` | Consultar hábitos con filtro, orden y paginación | **Query**:<br>- `usuario_id` (int, opcional)<br>- `categoria_id` (int, opcional)<br>- `estado` (str, opcional)<br>- `orden` (str, default: "nombre")<br>- `pagina` (int, default: 1)<br>- `tamano_pagina` (int, default: 10) | 200 OK<br>`HabitoPaginadoResponse` (`items`, `total`, `pagina`, `limite`, `total_paginas`) |
+| Hábitos | GET | `/habitos/` | Consultar hábitos con filtro, orden y paginación (primero filtra, luego ordena y al final pagina) | **Query**:<br>- `usuario_id` (int, opcional)<br>- `categoria_id` (int, opcional)<br>- `estado` (`ACTIVO`, `PAUSADO` o `ARCHIVADO`, opcional)<br>- `ordenar_por` (`nombre`, `frecuencia_semanal` o `fecha_creacion`; default: `nombre`)<br>- `direccion` (`asc` o `desc`; default: `asc`)<br>- `pagina` (int ≥ 1, default: 1)<br>- `limite` (int entre 1 y 100, default: 10)<br>Alias aceptados: `orden` = `ordenar_por`, `tamano_pagina` = `limite` | 200 OK<br>`HabitoPaginadoResponse` (`items`, `total`, `pagina`, `limite`, `total_paginas`) |
 | Hábitos | GET | `/habitos/{habito_id}` | Obtener los detalles de un hábito específico | **Path**: `habito_id` (int) | 200 OK<br>`HabitoResponse` |
 | Hábitos | PUT | `/habitos/{habito_id}` | Modificar los datos de un hábito existente | **Path**: `habito_id` (int)<br>Body: `HabitoUpdate` | 200 OK<br>`HabitoResponse` |
-| Hábitos | DELETE | `/habitos/{habito_id}` | Eliminar un hábito | **Path**: `habito_id` (int) | 204 No Content |
+| Hábitos | DELETE | `/habitos/{habito_id}` | Archivar un hábito (borrado lógico: cambia su estado a `ARCHIVADO` y conserva sus registros) | **Path**: `habito_id` (int) | 204 No Content |
 | Registros de Hábito | POST | `/registros/` | Crear un nuevo registro de cumplimiento para un hábito | **Body**: `RegistroHabitoCreate` | 201 Created<br>`RegistroHabitoResponse` |
 | Registros de Hábito | GET | `/registros/` | Listar todos los registros de hábitos guardados | *Ninguno* | 200 OK<br>`list[RegistroHabitoResponse]` |
 | Registros de Hábito | GET | `/registros/{registro_id}` | Obtener la información de un registro por su ID | **Path**: `registro_id` (int) | 200 OK<br>`RegistroHabitoResponse` |
@@ -324,7 +324,7 @@ deactivate
 | CRUD completo para una entidad | Listo | CRUD en Usuarios, Categorías, Hábitos y Registros |
 | Cuatro entidades, atributos, IDs y relación 1:N | Listo | Usuario, Categoría, Hábito y RegistroHabito con relaciones ORM |
 | Validaciones y reglas de negocio | Listo | Schemas, Pydantic y Services |
-| Filtrado, ordenamiento y paginación | Listo | `GET /habitos/` con metadatos completos |
-| Persistencia real y migraciones / seeders | Parcial | SQLAlchemy, Alembic y Seeders ejecutables |
+| Filtrado, ordenamiento y paginación | Listo | `GET /habitos/` con `ordenar_por`, `direccion`, `pagina`, `limite` y metadatos calculados en la base de datos |
+| Persistencia real y migraciones / seeders | Listo | Repositorios con SQLAlchemy, migración Alembic y seeders; caso 6 de `test_manual/casos_prueba_e5.md` |
 | README completo | Listo | Instalación, arquitectura, diagramas y contrato |
 | Colección importable | Listo | `test_manual/postman_collection.json` |
