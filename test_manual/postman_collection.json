@@ -33,7 +33,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Patricio\",\n  \"email\": \"psalazar{{$timestamp}}@alu.uct.cl\"\n}",
+              "raw": "{\n  \"name\": \"Patricio\",\n  \"email\": \"psalazar{{$timestamp}}{{$randomInt}}@alu.uct.cl\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -185,7 +185,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Usuario Temporal\",\n  \"email\": \"temporal{{$timestamp}}@alu.uct.cl\"\n}",
+              "raw": "{\n  \"name\": \"Usuario Temporal\",\n  \"email\": \"temporal{{$timestamp}}{{$randomInt}}@alu.uct.cl\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -235,7 +235,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Ejercicio-{{$timestamp}}\",\n  \"descripcion\": \"Actividad física diaria\"\n}",
+              "raw": "{\n  \"nombre\": \"Ejercicio-{{$timestamp}}{{$randomInt}}\",\n  \"descripcion\": \"Actividad física diaria\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -384,7 +384,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Temporal-{{$timestamp}}\",\n  \"descripcion\": \"Se elimina al final\"\n}",
+              "raw": "{\n  \"nombre\": \"Temporal-{{$timestamp}}{{$randomInt}}\",\n  \"descripcion\": \"Se elimina al final\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -434,7 +434,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"usuario_id\": \"{{usuario_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"nombre\": \"Correr-{{$timestamp}}\",\n  \"frecuencia_semanal\": 3\n}",
+              "raw": "{\n  \"usuario_id\": \"{{usuario_id}}\",\n  \"categoria_id\": \"{{categoria_id}}\",\n  \"nombre\": \"Correr-{{$timestamp}}{{$randomInt}}\",\n  \"frecuencia_semanal\": 3\n}",
               "options": {
                 "raw": {
                   "language": "json"

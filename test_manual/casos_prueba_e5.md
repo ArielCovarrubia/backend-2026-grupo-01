@@ -1,6 +1,6 @@
 # Casos de prueba obligatorios (Entregable E5)
 
-Fecha de ejecución: 31 de octubre de 2026.
+Fecha de ejecución: 1 de noviembre de 2026, sobre `main` con los repositorios conectados a la base de datos (PR #40).
 Responsable: Patricio Salazar (Calidad y Pruebas).
 
 Entorno: copia limpia del repositorio (rama `main`), `uv sync --group dev`, migraciones con `uv run alembic upgrade head`, seeders con `uv run python -m app.infrastructure.seeders.seed` y servidor con `uv run uvicorn app.main:app`. Base de datos por defecto: SQLite (`habitos.db`).
@@ -16,7 +16,7 @@ Todos los casos se pueden repetir con la colección `postman_collection.json` y 
 | 3 | Recurso inexistente (404) | Aprobado |
 | 4 | Regla de negocio (400) | Aprobado |
 | 5 | Filtros, orden y paginación | Aprobado |
-| 6 | Persistencia tras reinicio | Reprobado (bug 13) |
+| 6 | Persistencia tras reinicio | Aprobado |
 
 ## Caso 1: CRUD completo
 
@@ -62,20 +62,19 @@ Todos los casos se pueden repetir con la colección `postman_collection.json` y 
 
 | | Detalle |
 | --- | --- |
-| Solicitud | `GET /habitos/?pagina=2&tamano_pagina=3` con 4 hábitos creados |
-| Entrada | Parámetros `usuario_id`, `categoria_id`, `estado`, `orden` (`nombre`, `frecuencia_semanal`, `fecha_creacion`), `pagina` y `tamano_pagina`. Pruebas inválidas: `pagina=0` y `orden=color` |
+| Solicitud | `GET /habitos/?pagina=2&limite=3` con 4 hábitos creados |
+| Entrada | Parámetros `usuario_id`, `categoria_id`, `estado`, `ordenar_por` (`nombre`, `frecuencia_semanal`, `fecha_creacion`), `direccion` (`asc` o `desc`), `pagina` y `limite` (1 a 100). Los nombres antiguos `orden` y `tamano_pagina` siguen funcionando como alias. Pruebas inválidas: `pagina=0`, `limite=101`, `direccion=arriba`, `ordenar_por=color` y `estado=xyz` |
 | Resultado esperado | 200 con `{"items": [...], "total": 4, "pagina": 2, "limite": 3, "total_paginas": 2}` y un solo elemento en `items`. Los filtros y el orden reducen y ordenan la lista. Los parámetros inválidos responden 400 |
-| Resultado obtenido | 200 con `total` 4, `pagina` 2, `limite` 3, `total_paginas` 2 y 1 elemento. Filtros y orden correctos. `pagina=0` y `orden=color` responden 400 con `BUSINESS_RULE_ERROR` |
+| Resultado obtenido | 200 con `total` 4, `pagina` 2, `limite` 3, `total_paginas` 2 y 1 elemento. Filtros, orden ascendente y descendente correctos. Todos los parámetros inválidos responden 400 con `BUSINESS_RULE_ERROR` |
 | Estado | Aprobado |
 
 ## Caso 6: Persistencia tras reinicio
 
 | | Detalle |
 | --- | --- |
-| Procedimiento | 1. Base nueva con migraciones y seeders. 2. Levantar el servidor. 3. `POST /usuarios/` con `{"name": "Persistente", "email": "persist@x.cl"}`. 4. Detener el servidor con Ctrl+C. 5. Volver a levantarlo. 6. `GET /usuarios/` |
-| Resultado esperado | Después del reinicio, el usuario "Persistente" y los 3 usuarios de los seeders siguen apareciendo |
-| Resultado obtenido | `GET /usuarios/` devuelve `[]` antes y después del reinicio, incluso con los seeders cargados. La tabla `usuarios` de la base sí contiene las 3 filas del seeder, pero la API no las lee. El usuario creado por la API no se guarda en la base |
-| Causa | Los repositorios de `app/infrastructure/repositories/` guardan los datos en diccionarios de Python en memoria, no usan `get_db` ni los modelos SQLAlchemy |
-| Estado | Reprobado. Documentado como bug 13 en `bugs_found.md` |
+| Procedimiento | 1. Base nueva con `alembic upgrade head` y seeders. 2. Levantar el servidor. 3. `GET /usuarios/` y `GET /categorias/1`. 4. `POST /usuarios/` con `{"name": "Persistente", "email": "persist@x.cl"}`. 5. Detener el servidor con Ctrl+C. 6. Volver a levantarlo. 7. `GET /usuarios/` |
+| Resultado esperado | Los 3 usuarios del seeder son visibles desde el inicio y, después del reinicio, también sigue apareciendo el usuario "Persistente" |
+| Resultado obtenido | En el paso 3, `GET /usuarios/` devuelve los 3 usuarios del seeder y `GET /categorias/1` responde 200. Tras el reinicio, `GET /usuarios/` devuelve los 4 usuarios, incluido "Persistente" |
+| Estado | Aprobado |
 
-Este caso debe repetirse cuando los repositorios usen la base de datos.
+Historial: el 31 de octubre este caso salió reprobado (bug 13), porque los repositorios guardaban los datos en diccionarios en memoria. Se repitió después del PR #40 y pasó. La prueba automatizada `tests/test_persistencia.py` reinicia un servidor real y verifica lo mismo.
