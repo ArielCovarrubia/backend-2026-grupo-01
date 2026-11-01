@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from sqlalchemy.orm import Session
 
 from app.domain.exceptions import ConflictoError, RecursoNoEncontradoError, ReglaNegocioError
 from app.domain.habito import EstadoHabito
@@ -7,8 +8,8 @@ from app.infrastructure.repositories import habito_repository, registro_reposito
 from app.presentation.schemas.registro_schema import RegistroHabitoCreate, RegistroHabitoUpdate
 
 
-def crear_registro_habito(datos: RegistroHabitoCreate) -> RegistroHabito:
-    habito = habito_repository.obtener(datos.habito_id)
+def crear_registro_habito(datos: RegistroHabitoCreate, db: Session | None = None) -> RegistroHabito:
+    habito = habito_repository.obtener(datos.habito_id, db=db)
     if habito is None:
         raise RecursoNoEncontradoError("Hábito no encontrado.")
 
@@ -18,10 +19,7 @@ def crear_registro_habito(datos: RegistroHabitoCreate) -> RegistroHabito:
     if datos.fecha_registro > date.today():
         raise ReglaNegocioError("La fecha de registro no puede ser futura.")
 
-    if registro_repository.existe_registro_en_fecha(
-        datos.habito_id,
-        datos.fecha_registro,
-    ):
+    if registro_repository.existe_registro_en_fecha(datos.habito_id, datos.fecha_registro, db=db):
         raise ConflictoError("Ya existe un registro para este hábito en la fecha especificada.")
 
     registro = RegistroHabito(
@@ -33,22 +31,22 @@ def crear_registro_habito(datos: RegistroHabitoCreate) -> RegistroHabito:
         nota=datos.nota,
         creado_en=datetime.now(),
     )
-    return registro_repository.guardar(registro)
+    return registro_repository.guardar(registro, db=db)
 
 
-def listar_registros_habito() -> list[RegistroHabito]:
-    return registro_repository.listar()
+def listar_registros_habito(db: Session | None = None) -> list[RegistroHabito]:
+    return registro_repository.listar(db=db)
 
 
-def obtener_registro_habito(registro_id: int) -> RegistroHabito:
-    registro = registro_repository.obtener(registro_id)
+def obtener_registro_habito(registro_id: int, db: Session | None = None) -> RegistroHabito:
+    registro = registro_repository.obtener(registro_id, db=db)
     if registro is None:
         raise RecursoNoEncontradoError("Registro no encontrado.")
     return registro
 
 
-def actualizar_registro_habito(registro_id: int, datos: RegistroHabitoUpdate) -> RegistroHabito:
-    registro = registro_repository.obtener(registro_id)
+def actualizar_registro_habito(registro_id: int, datos: RegistroHabitoUpdate, db: Session | None = None) -> RegistroHabito:
+    registro = registro_repository.obtener(registro_id, db=db)
     if registro is None:
         raise RecursoNoEncontradoError("Registro no encontrado.")
 
@@ -61,13 +59,12 @@ def actualizar_registro_habito(registro_id: int, datos: RegistroHabitoUpdate) ->
     if datos.nota is not None:
         registro.nota = datos.nota
 
-    return registro_repository.actualizar(registro_id, registro)
+    return registro_repository.actualizar(registro_id, registro, db=db)
 
 
-def eliminar_registro_habito(registro_id: int) -> None:
-    registro = registro_repository.obtener(registro_id)
+def eliminar_registro_habito(registro_id: int, db: Session | None = None) -> None:
+    registro = registro_repository.obtener(registro_id, db=db)
     if registro is None:
         raise RecursoNoEncontradoError("Registro no encontrado.")
 
-    registro_repository.eliminar(registro_id)
-
+    registro_repository.eliminar(registro_id, db=db)
