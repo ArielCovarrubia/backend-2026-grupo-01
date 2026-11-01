@@ -6,6 +6,7 @@ class CategoriaCreate(BaseModel):
 
     nombre: str = Field(..., min_length=3, max_length=30)
     descripcion: str = Field(..., max_length=200)
+    orden_prioridad: int = 1
 
 
 class CategoriaUpdate(BaseModel):
@@ -14,6 +15,7 @@ class CategoriaUpdate(BaseModel):
     nombre: str | None = Field(None, min_length=3, max_length=30)
     descripcion: str | None = Field(None, max_length=200)
     activa: bool | None = None
+    orden_prioridad: int | None = None
 
 
 class CategoriaResponse(BaseModel):
@@ -21,4 +23,4 @@ class CategoriaResponse(BaseModel):
     nombre: str
     descripcion: str
     activa: bool
-    orden_prioridad: int 
+    orden_prioridad: int
