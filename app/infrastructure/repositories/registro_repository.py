@@ -1,50 +1,130 @@
 from datetime import date
+from sqlalchemy.orm import Session
 
 from app.domain.registro_habito import RegistroHabito
+from app.infrastructure.database import SessionLocal
+from app.infrastructure.mappers.registro_mapper import registro_a_dominio, registro_a_modelo
+from app.infrastructure.models.registro_model import RegistroHabitoModel
 
 _registros: dict[int, RegistroHabito] = {}
 _contador_id = 0
 
 
-def guardar(registro: RegistroHabito) -> RegistroHabito:
-    global _contador_id
-    _contador_id += 1
-    registro.id = _contador_id
-    _registros[registro.id] = registro
-    return registro
+def _get_session(db: Session | None) -> tuple[Session, bool]:
+    if db is not None:
+        return db, False
+    return SessionLocal(), True
 
 
-def listar() -> list[RegistroHabito]:
-    return list(_registros.values())
+def guardar(registro: RegistroHabito, db: Session | None = None) -> RegistroHabito:
+    s, close = _get_session(db)
+    try:
+        modelo = registro_a_modelo(registro)
+        s.add(modelo)
+        s.commit()
+        s.refresh(modelo)
+        return registro_a_dominio(modelo)
+    except Exception:
+        s.rollback()
+        raise
+    finally:
+        if close:
+            s.close()
 
 
-def obtener(registro_id: int) -> RegistroHabito | None:
-    return _registros.get(registro_id)
+def listar(db: Session | None = None) -> list[RegistroHabito]:
+    s, close = _get_session(db)
+    try:
+        modelos = s.query(RegistroHabitoModel).order_by(RegistroHabitoModel.id.asc()).all()
+        return [registro_a_dominio(m) for m in modelos]
+    finally:
+        if close:
+            s.close()
 
 
-def listar_por_habito(habito_id: int) -> list[RegistroHabito]:
-    return [r for r in _registros.values() if r.habito_id == habito_id]
+def obtener(registro_id: int, db: Session | None = None) -> RegistroHabito | None:
+    s, close = _get_session(db)
+    try:
+        modelo = s.query(RegistroHabitoModel).filter(RegistroHabitoModel.id == registro_id).first()
+        return registro_a_dominio(modelo) if modelo else None
+    finally:
+        if close:
+            s.close()
 
 
-def existe_registro_en_fecha(habito_id: int, fecha: date) -> bool:
-    return any(
-        r.habito_id == habito_id and r.fecha_registro == fecha
-        for r in _registros.values()
-    )
+def listar_por_habito(habito_id: int, db: Session | None = None) -> list[RegistroHabito]:
+    s, close = _get_session(db)
+    try:
+        modelos = (
+            s.query(RegistroHabitoModel)
+            .filter(RegistroHabitoModel.habito_id == habito_id)
+            .order_by(RegistroHabitoModel.fecha_registro.asc(), RegistroHabitoModel.id.asc())
+            .all()
+        )
+        return [registro_a_dominio(m) for m in modelos]
+    finally:
+        if close:
+            s.close()
 
 
-def actualizar(registro_id: int, registro: RegistroHabito) -> RegistroHabito | None:
-    if registro_id not in _registros:
-        return None
-    registro.id = registro_id
-    _registros[registro_id] = registro
-    return registro
+def existe_registro_en_fecha(habito_id: int, fecha: date, db: Session | None = None) -> bool:
+    s, close = _get_session(db)
+    try:
+        return (
+            s.query(RegistroHabitoModel.id)
+            .filter(
+                RegistroHabitoModel.habito_id == habito_id,
+                RegistroHabitoModel.fecha_registro == fecha,
+            )
+            .first()
+            is not None
+        )
+    finally:
+        if close:
+            s.close()
 
 
-def eliminar(registro_id: int) -> bool:
-    return _registros.pop(registro_id, None) is not None
+def actualizar(registro_id: int, registro: RegistroHabito, db: Session | None = None) -> RegistroHabito | None:
+    s, close = _get_session(db)
+    try:
+        modelo = s.query(RegistroHabitoModel).filter(RegistroHabitoModel.id == registro_id).first()
+        if not modelo:
+            return None
+        modelo.completado = registro.completado
+        modelo.valor_medido = registro.valor_medido
+        modelo.nota = registro.nota
+        s.commit()
+        s.refresh(modelo)
+        return registro_a_dominio(modelo)
+    except Exception:
+        s.rollback()
+        raise
+    finally:
+        if close:
+            s.close()
 
 
-def existe(registro_id: int) -> bool:
-    return registro_id in _registros
+def eliminar(registro_id: int, db: Session | None = None) -> bool:
+    s, close = _get_session(db)
+    try:
+        modelo = s.query(RegistroHabitoModel).filter(RegistroHabitoModel.id == registro_id).first()
+        if not modelo:
+            return False
+        s.delete(modelo)
+        s.commit()
+        return True
+    except Exception:
+        s.rollback()
+        raise
+    finally:
+        if close:
+            s.close()
 
+
+def existe(registro_id: int, db: Session | None = None) -> bool:
+    s, close = _get_session(db)
+    try:
+        return s.query(RegistroHabitoModel.id).filter(RegistroHabitoModel.id == registro_id).first() is not None
+    finally:
+        if close:
+            s.close()

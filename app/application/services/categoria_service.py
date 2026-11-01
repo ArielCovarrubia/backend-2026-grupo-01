@@ -1,30 +1,24 @@
+from sqlalchemy.orm import Session
+
 from app.domain.categoria import Categoria
 from app.domain.exceptions import ConflictoError, RecursoNoEncontradoError, ReglaNegocioError
 from app.infrastructure.repositories import categoria_repository, habito_repository
 from app.presentation.schemas.categoria_schema import CategoriaCreate, CategoriaUpdate
 
 
-def listar_categorias() -> list[Categoria]:
-    return categoria_repository.listar()
+def listar_categorias(db: Session | None = None) -> list[Categoria]:
+    return categoria_repository.listar(db=db)
 
 
-def obtener_categoria(categoria_id: int) -> Categoria:
-    categoria = categoria_repository.obtener(categoria_id)
+def obtener_categoria(categoria_id: int, db: Session | None = None) -> Categoria:
+    categoria = categoria_repository.obtener(categoria_id, db=db)
     if categoria is None:
         raise RecursoNoEncontradoError(f"No existe una categoría con el ID {categoria_id}.")
     return categoria
 
 
-def crear_categoria(datos: CategoriaCreate) -> Categoria:
-    categoria_existente = next(
-        (
-            categoria
-            for categoria in categoria_repository.listar()
-            if categoria.nombre.casefold() == datos.nombre.casefold()
-        ),
-        None,
-    )
-
+def crear_categoria(datos: CategoriaCreate, db: Session | None = None) -> Categoria:
+    categoria_existente = categoria_repository.obtener_por_nombre(datos.nombre, db=db)
     if categoria_existente is not None:
         raise ConflictoError(f"Ya existe una categoría con el nombre '{datos.nombre}'.")
 
@@ -34,25 +28,17 @@ def crear_categoria(datos: CategoriaCreate) -> Categoria:
         descripcion=datos.descripcion,
         activa=True,
     )
+    return categoria_repository.guardar(categoria, db=db)
 
-    return categoria_repository.guardar(categoria)
 
-
-def actualizar_categoria(categoria_id: int, datos: CategoriaUpdate) -> Categoria:
-    categoria = categoria_repository.obtener(categoria_id)
+def actualizar_categoria(categoria_id: int, datos: CategoriaUpdate, db: Session | None = None) -> Categoria:
+    categoria = categoria_repository.obtener(categoria_id, db=db)
     if categoria is None:
         raise RecursoNoEncontradoError(f"No existe una categoría con el ID {categoria_id}.")
 
     if datos.nombre is not None:
-        otra_categoria = next(
-            (
-                c
-                for c in categoria_repository.listar()
-                if c.nombre.casefold() == datos.nombre.casefold() and c.id != categoria_id
-            ),
-            None,
-        )
-        if otra_categoria is not None:
+        otra_categoria = categoria_repository.obtener_por_nombre(datos.nombre, db=db)
+        if otra_categoria is not None and otra_categoria.id != categoria_id:
             raise ConflictoError(f"Ya existe otra categoría con el nombre '{datos.nombre}'.")
         categoria.nombre = datos.nombre
 
@@ -65,17 +51,19 @@ def actualizar_categoria(categoria_id: int, datos: CategoriaUpdate) -> Categoria
         else:
             categoria.desactivar()
 
-    categoria_repository.actualizar(categoria_id, categoria)
+    if datos.orden_prioridad is not None:
+        categoria.orden_prioridad = datos.orden_prioridad
+
+    categoria_repository.actualizar(categoria_id, categoria, db=db)
     return categoria
 
 
-def eliminar_categoria(categoria_id: int) -> None:
-    categoria = categoria_repository.obtener(categoria_id)
+def eliminar_categoria(categoria_id: int, db: Session | None = None) -> None:
+    categoria = categoria_repository.obtener(categoria_id, db=db)
     if categoria is None:
         raise RecursoNoEncontradoError(f"No existe una categoría con el ID {categoria_id}.")
 
-    if habito_repository.existe_por_categoria(categoria_id):
+    if habito_repository.existe_por_categoria(categoria_id, db=db):
         raise ReglaNegocioError("No se puede eliminar la categoría porque tiene hábitos asociados.")
 
-    categoria_repository.eliminar(categoria_id)
-
+    categoria_repository.eliminar(categoria_id, db=db)
