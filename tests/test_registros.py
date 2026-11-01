@@ -104,3 +104,13 @@ def test_crear_registro_sin_campos_obligatorios(client):
 
 def test_actualizar_registro_valor_negativo(client, registro):
     assert_error(client.put(f"/registros/{registro['id']}", json={"valor_medido": -5}), 422, "VALIDATION_ERROR")
+
+
+def test_actualizar_registro_nota_solo_espacios(client, registro):
+    assert_error(client.put(f"/registros/{registro['id']}", json={"nota": "     "}), 422, "VALIDATION_ERROR")
+
+
+def test_nota_se_guarda_sin_espacios_laterales(client, habito, ayer):
+    r = client.post("/registros/", json=_body(habito["id"], ayer, nota="  ok  "))
+    assert r.status_code == 201
+    assert r.json()["nota"] == "ok"

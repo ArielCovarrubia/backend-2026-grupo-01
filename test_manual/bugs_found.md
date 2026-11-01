@@ -79,7 +79,7 @@ Responsable de pruebas: Patricio Salazar (QA), con reproducción técnica de Ari
 
 ## Bugs de la etapa 2 (detectados con la colección Postman y `tests/`)
 
-El único bug abierto es el 11, y tiene una prueba `xfail(strict=True)` en `tests/test_bugs_conocidos.py`: cuando se corrija, la prueba pasará a XPASS y fallará por `strict`, avisando que hay que quitar el marcador. Los bugs corregidos (6 a 10) quedaron como pruebas normales con el prefijo `test_corregido_`. El bug 13 se verifica con `tests/test_persistencia.py`, que reinicia un servidor real, y con el caso 6 de `casos_prueba_e5.md`. El bug 12 se cerró sin cambios.
+No quedan bugs abiertos. Los bugs corregidos (6 a 11) quedaron como pruebas normales con el prefijo `test_corregido_`. El bug 13 se verifica con `tests/test_persistencia.py`, que reinicia un servidor real, y con el caso 6 de `casos_prueba_e5.md`. El bug 12 se cerró sin cambios.
 
 | # | Estado | Severidad | Endpoint | Esperado | Obtenido | Responsable sugerido |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ El único bug abierto es el 11, y tiene una prueba `xfail(strict=True)` en `test
 | 8 | Corregido | Baja | `POST /habitos/` | No permitir hábitos en categorías con `activa=false` | Se creaba (201) | Ariel |
 | 9 | Corregido | Baja | `POST /registros/` | No permitir registros sobre hábitos `ARCHIVADO` | Se creaba (201) | Ariel |
 | 10 | Corregido | Baja | `GET /habitos/?estado=xyz` | 400/422 por estado inválido | 200 con lista vacía (`orden` sí se valida). Ahora responde 400 con `BUSINESS_RULE_ERROR` | Ariel |
-| 11 | Abierto | Baja | `POST/PUT /registros/` | `nota` de solo espacios rechazada o normalizada | Se acepta; `registro_schema.py` no tiene `str_strip_whitespace` | Beatriz |
+| 11 | Corregido | Baja | `POST/PUT /registros/` | `nota` de solo espacios rechazada o normalizada | Se acepta; `registro_schema.py` no tiene `str_strip_whitespace`. Ahora responde 422 y la nota se guarda sin espacios laterales | Beatriz |
 | 12 | Cerrado | Media | Todos los errores | Formato `{"detail": {"code", "message"}}` según la guía de la etapa | Se devuelve `{"error": {"code", "message", "details"}}`; hay que acordar cuál es el contrato oficial. Sin cambios: el formato `{"error": {"code", "message", "details"}}` es el que exige la guía (punto 5.4), según la revisión del equipo | Ariel y Beatriz |
 | 13 | Corregido | Alta | Toda la API | Los datos persisten en la base de datos: sobreviven al reinicio del servidor y los seeders son visibles por la API | Los repositorios de `app/infrastructure/repositories/` siguen usando diccionarios en memoria. Al reiniciar el servidor se pierden los datos y los 3 usuarios cargados por el seeder nunca aparecen en `GET /usuarios/` (la tabla sí los tiene). Los repositorios ahora usan SQLAlchemy. Los datos sobreviven al reinicio y los seeders son visibles por la API | Ariel (repositorios) y Beatriz (modelos y mappers) |
 
@@ -103,5 +103,5 @@ El único bug abierto es el 11, y tiene una prueba `xfail(strict=True)` en `test
 
 ## Cómo se verificó
 
-- `pytest`: 110 pruebas pasan y 1 `xfail` documenta el bug abierto 11.
+- `pytest`: 113 pruebas pasan y ninguna `xfail`.
 - Colección Postman ejecutada completa contra `uvicorn` real, desde una base nueva con migraciones y seeders: 40 solicitudes, 0 fallos, seis ejecuciones seguidas con datos persistidos entre ellas. Cada solicitud guarda los IDs que crea en variables de colección y usa `{{$timestamp}}` en emails/nombres, por lo que se puede ejecutar varias veces sin reiniciar el servidor.
