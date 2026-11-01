@@ -38,4 +38,5 @@ uv run pytest
 - `conftest.py`: fixtures que vacían los diccionarios en memoria y reinician los contadores de ID antes y después de cada prueba, además de fixtures para crear usuario, categoría, hábito y registro.
 - `test_usuarios.py`, `test_categorias.py`, `test_habitos.py`, `test_registros.py`: CRUD, duplicados (409), fecha futura, IDs inexistentes (404), validaciones (422), filtros, ordenamiento y paginación.
 - `test_cors.py`: preflight y cabeceras CORS para `http://localhost:5173`.
+- `test_persistencia.py`: levanta un servidor real con una base temporal, crea un dato, lo reinicia y verifica que el dato sigue existiendo.
 - `test_bugs_conocidos.py`: pruebas `xfail` de los bugs documentados en `bugs_found.md`.
