@@ -33,7 +33,6 @@ def test_corregido_filtro_estado_invalido_es_error(client):
     assert_error(client.get("/habitos/", params={"estado": "xyz"}), 400, "BUSINESS_RULE_ERROR")
 
 
-@pytest.mark.xfail(strict=True, reason="Bug 11: nota compuesta solo por espacios se acepta")
-def test_nota_solo_espacios_se_rechaza(client, habito, ayer):
+def test_corregido_nota_solo_espacios_se_rechaza(client, habito, ayer):
     r = client.post("/registros/", json={"habito_id": habito["id"], "fecha_registro": ayer, "nota": "     "})
     assert r.status_code == 422
