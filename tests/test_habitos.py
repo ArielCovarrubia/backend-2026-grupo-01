@@ -198,6 +198,23 @@ def test_paginacion_sin_resultados_tiene_una_pagina(client):
     assert cuerpo == {"items": [], "total": 0, "pagina": 1, "limite": 10, "total_paginas": 1}
 
 
+def test_ordenar_por_y_direccion_descendente(client, varios):
+    r = client.get("/habitos/", params={"ordenar_por": "frecuencia_semanal", "direccion": "desc"})
+    assert _nombres(r) == ["Dormir temprano", "Correr", "Abdominales", "Yoga"]
+
+
+def test_limite_define_el_tamano_de_pagina(client, varios):
+    cuerpo = client.get("/habitos/", params={"limite": 2}).json()
+    assert cuerpo["limite"] == 2
+    assert cuerpo["total_paginas"] == 2
+    assert len(cuerpo["items"]) == 2
+
+
+@pytest.mark.parametrize("params", [{"limite": 0}, {"limite": 101}, {"direccion": "arriba"}])
+def test_parametros_de_listado_fuera_de_rango(client, params):
+    assert_error(client.get("/habitos/", params=params), 400, "BUSINESS_RULE_ERROR")
+
+
 def test_orden_invalido(client, varios):
     assert_error(client.get("/habitos/", params={"orden": "color"}), 400, "BUSINESS_RULE_ERROR")
 
