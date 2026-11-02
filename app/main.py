@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -21,7 +22,15 @@ from app.presentation.routers import categorias, habitos, registros, usuarios
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(
+    title="API de Seguimiento de Hábitos de Bienestar",
+    description=(
+        "API REST para registrar usuarios, categorías, hábitos y el cumplimiento diario. "
+        "Todos los errores usan el formato uniforme "
+        "`{\"error\": {\"code\", \"message\", \"details\"}}`."
+    ),
+    version="1.0.0",
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -130,3 +139,77 @@ app.include_router(usuarios.router)
 app.include_router(categorias.router)
 app.include_router(habitos.router)
 app.include_router(registros.router)
+
+
+ESQUEMA_ERROR = {
+    "type": "object",
+    "required": ["error"],
+    "properties": {
+        "error": {
+            "type": "object",
+            "required": ["code", "message", "details"],
+            "properties": {
+                "code": {"type": "string"},
+                "message": {"type": "string"},
+                "details": {"type": "array", "items": {"type": "object"}},
+            },
+        }
+    },
+}
+
+EJEMPLOS_ERROR = {
+    "400": {
+        "error": {
+            "code": "BUSINESS_RULE_ERROR",
+            "message": "No se puede eliminar la categoría porque tiene hábitos asociados.",
+            "details": [],
+        }
+    },
+    "404": {
+        "error": {
+            "code": "RESOURCE_NOT_FOUND",
+            "message": "Usuario no encontrado.",
+            "details": [],
+        }
+    },
+    "409": {
+        "error": {
+            "code": "CONFLICT",
+            "message": "El email ya está registrado.",
+            "details": [],
+        }
+    },
+    "422": {
+        "error": {
+            "code": "VALIDATION_ERROR",
+            "message": "Los datos enviados no son válidos.",
+            "details": [{"field": "email", "message": "value is not a valid email address"}],
+        }
+    },
+}
+
+
+def generar_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    esquema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    for operaciones in esquema["paths"].values():
+        for operacion in operaciones.values():
+            for codigo, respuesta in operacion.get("responses", {}).items():
+                if codigo in EJEMPLOS_ERROR:
+                    respuesta["content"] = {
+                        "application/json": {
+                            "schema": ESQUEMA_ERROR,
+                            "example": EJEMPLOS_ERROR[codigo],
+                        }
+                    }
+    app.openapi_schema = esquema
+    return esquema
+
+
+app.openapi = generar_openapi
