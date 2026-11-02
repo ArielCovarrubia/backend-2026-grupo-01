@@ -39,4 +39,4 @@ uv run pytest
 - `test_usuarios.py`, `test_categorias.py`, `test_habitos.py`, `test_registros.py`: CRUD, duplicados (409), fecha futura, IDs inexistentes (404), validaciones (422), filtros, ordenamiento y paginación.
 - `test_cors.py`: preflight y cabeceras CORS para `http://localhost:5173`.
 - `test_persistencia.py`: levanta un servidor real con una base temporal, crea un dato, lo reinicia y verifica que el dato sigue existiendo.
-- `test_bugs_conocidos.py`: pruebas `xfail` de los bugs documentados en `bugs_found.md`.
+- `test_bugs_conocidos.py`: pruebas de regresión de los bugs documentados en `bugs_found.md`.
