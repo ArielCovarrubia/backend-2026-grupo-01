@@ -39,10 +39,6 @@ La distribución se actualizó para trabajar con tres integrantes. La salida de 
 
 La evidencia de contribución debe mantenerse en commits separados por tarea, ramas personales y pull requests revisadas. No se deben crear commits a nombre de Josefa después de su salida.
 
-> Asegúrese de cumplir con los requerimientos establecidos para poder llevar a cabo de forma exitosa la ejecución del proyecto.
-- [uv](https://docs.astral.sh/uv/) (probado con UV 0.12.13)
-- Python >= 3.14 (probado en python 3.14.7)
-
 ## Descripción breve del proyecto
 Este proyecto está centralizado en solucionar la dificultad de medir el progreso del bienestar diario (ejercicio, sueño, alimentación) a causa de registros desorganizados en notas sueltas, llevándose a cabo con la ayuda de una API REST en Python y FastAPI que permite gestionar usuarios, registrar el cumplimiento diario y consultar el historial mediante filtros y paginación.
 
@@ -192,6 +188,10 @@ pyproject.toml            # Dependencias del proyecto
 uv.lock                   # Versiones bloqueadas de dependencias
 README.md                 # Documentación principal
 ```
+## Requerimientos
+- [uv](https://docs.astral.sh/uv/) (probado con 0.12.13).
+- Python >= 3.14 (probado con 3.14.7).
+> No es necesario instalar Python aparte: al ejecutar `uv sync`, uv descarga automáticamente una versión compatible si no la tienes.
 
 ## Ejecución del proyecto
 Para ejecutar este proyecto localmente desde una copia limpia utilizando `uv`, sigue estos pasos en tu terminal:
