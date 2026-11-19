@@ -124,6 +124,7 @@ erDiagram
         VARCHAR(100) email UK "NOT NULL"
         DATETIME fecha_registro "NOT NULL"
         VARCHAR(50) zona_horaria "NOT NULL, default America/Santiago"
+        VARCHAR(255) password_hash "NULL"
     }
     categorias {
         INTEGER id PK
@@ -228,11 +229,11 @@ Por defecto la API usa SQLite en el archivo `habitos.db`, que se crea en la raí
 
 - #### Sistemas Linux/macOS
 ```bash
-export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/habitos  
+export DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/habitos
 ```
 - #### Sistemas Windows `PowerShell`
 ```bash
-$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/habitos"  
+$env:DATABASE_URL="postgresql+psycopg://postgres:postgres@localhost:5432/habitos"
 ```
 
 ### Aplicar migraciones (Alembic)
