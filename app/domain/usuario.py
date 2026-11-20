@@ -11,3 +11,4 @@ class Usuario:
     fecha_registro: datetime = field(default_factory=datetime.now)
     zona_horaria: str = "America/Santiago"
     password_hash: str | None = None
+    role: str = "usuario"

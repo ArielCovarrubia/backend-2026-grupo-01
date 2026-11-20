@@ -12,4 +12,5 @@ class UsuarioModel(Base):
     fecha_registro = Column(DateTime, default=datetime.now, nullable=False)
     zona_horaria = Column(String(50), default="America/Santiago", nullable=False)
     password_hash = Column(String(255), nullable=True)
+    role = Column(String(20), nullable=False, default="usuario")
     habitos = relationship("HabitoModel", back_populates="usuario", cascade="all, delete-orphan")
