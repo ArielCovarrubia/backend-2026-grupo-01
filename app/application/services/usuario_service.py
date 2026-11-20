@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.exceptions import ConflictoError, RecursoNoEncontradoError
 from app.domain.usuario import Usuario
+from app.application.services.auth_service import hash_password
 from app.infrastructure.repositories import habito_repository, usuario_repository
 from app.presentation.schemas.usuario_schema import UsuarioCreate, UsuarioUpdate
 
@@ -15,6 +16,7 @@ def crear_usuario(datos: UsuarioCreate, db: Session | None = None) -> Usuario:
         id=0,
         name=datos.name,
         email=str(datos.email),
+        password_hash=hash_password(datos.password) if datos.password else None,
     )
     return usuario_repository.guardar(usuario, db=db)
 
