@@ -67,3 +67,11 @@ def eliminar_categoria(categoria_id: int, db: Session | None = None) -> None:
         raise ReglaNegocioError("No se puede eliminar la categoría porque tiene hábitos asociados.")
 
     categoria_repository.eliminar(categoria_id, db=db)
+
+
+def activar_categoria(categoria_id: int, db: Session | None = None) -> Categoria:
+    categoria = categoria_repository.obtener(categoria_id, db=db)
+    if categoria is None:
+        raise RecursoNoEncontradoError(f"No existe una categoría con el ID {categoria_id}.")
+    categoria.activar()
+    return categoria_repository.actualizar(categoria_id, categoria, db=db)

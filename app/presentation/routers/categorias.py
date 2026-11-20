@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
 
 from app.application.services import categoria_service
-from app.presentation.dependencies import get_db
+from app.presentation.dependencies import get_admin_actual, get_db, get_usuario_actual
 from app.presentation.schemas.categoria_schema import (
     CategoriaCreate,
     CategoriaResponse,
@@ -24,7 +24,7 @@ router = APIRouter(
         200: {"description": "Listado de categorías obtenido correctamente."},
     },
 )
-def listar_categorias(db: Session = Depends(get_db)):
+def listar_categorias(db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
     return categoria_service.listar_categorias(db=db)
 
 
@@ -41,6 +41,7 @@ def listar_categorias(db: Session = Depends(get_db)):
 def obtener_categoria(
     categoria_id: int = Path(..., description="ID de la categoría", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return categoria_service.obtener_categoria(categoria_id, db=db)
 
@@ -57,7 +58,7 @@ def obtener_categoria(
         422: {"description": "Datos de entrada inválidos."},
     },
 )
-def crear_categoria(datos: CategoriaCreate, db: Session = Depends(get_db)):
+def crear_categoria(datos: CategoriaCreate, db: Session = Depends(get_db), admin=Depends(get_admin_actual)):
     return categoria_service.crear_categoria(datos, db=db)
 
 
@@ -76,6 +77,7 @@ def actualizar_categoria(
     categoria_id: int = Path(..., description="ID de la categoría a actualizar", ge=1),
     datos: CategoriaUpdate = ...,
     db: Session = Depends(get_db),
+    admin=Depends(get_admin_actual),
 ):
     return categoria_service.actualizar_categoria(categoria_id, datos, db=db)
 
@@ -94,5 +96,15 @@ def actualizar_categoria(
 def eliminar_categoria(
     categoria_id: int = Path(..., description="ID de la categoría a eliminar", ge=1),
     db: Session = Depends(get_db),
+    admin=Depends(get_admin_actual),
 ):
     categoria_service.eliminar_categoria(categoria_id, db=db)
+
+
+@router.post("/{categoria_id}/activar", response_model=CategoriaResponse)
+def activar_categoria(
+    categoria_id: int = Path(..., ge=1),
+    db: Session = Depends(get_db),
+    admin=Depends(get_admin_actual),
+):
+    return categoria_service.activar_categoria(categoria_id, db=db)
