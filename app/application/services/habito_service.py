@@ -129,3 +129,11 @@ def eliminar_habito(habito_id: int, db: Session | None = None) -> None:
 
     habito.archivar()
     habito_repository.actualizar(habito_id, habito, db=db)
+
+
+def desarchivar_habito(habito_id: int, db: Session | None = None) -> Habito:
+    habito = habito_repository.obtener(habito_id, db=db)
+    if habito is None:
+        raise RecursoNoEncontradoError("Hábito no encontrado.")
+    habito.desarchivar()
+    return habito_repository.actualizar(habito_id, habito, db=db)

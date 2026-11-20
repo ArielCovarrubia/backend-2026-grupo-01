@@ -10,6 +10,7 @@ def usuario_a_dominio(model: UsuarioModel) -> Usuario:
         fecha_registro=model.fecha_registro,
         zona_horaria=model.zona_horaria,
         password_hash=model.password_hash,
+        role=model.role,
     )
 
 
@@ -21,4 +22,5 @@ def usuario_a_modelo(entity: Usuario) -> UsuarioModel:
         fecha_registro=entity.fecha_registro,
         zona_horaria=entity.zona_horaria,
         password_hash=entity.password_hash,
+        role=entity.role,
     )

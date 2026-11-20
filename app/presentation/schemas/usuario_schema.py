@@ -11,6 +11,7 @@ class UsuarioCreate(BaseModel):
 
     name: str = Field(..., min_length=2, max_length=60)
     email: EmailStr
+    password: str | None = Field(default=None, min_length=8, max_length=128)
 
 
 class UsuarioUpdate(BaseModel):
@@ -43,3 +44,4 @@ class UsuarioResponse(BaseModel):
     email: EmailStr
     fecha_registro: datetime
     zona_horaria: str  
+    role: str = "usuario"

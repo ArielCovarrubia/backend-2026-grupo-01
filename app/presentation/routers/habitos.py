@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.orm import Session
 
 from app.application.services import habito_service
-from app.presentation.dependencies import get_db
+from app.presentation.dependencies import get_db, get_usuario_actual
 from app.presentation.schemas.habito_schema import (
     HabitoCreate,
     HabitoPaginadoResponse,
@@ -29,7 +29,7 @@ router = APIRouter(
         409: {"description": "El hábito con ese nombre ya existe para el usuario."},
     },
 )
-def crear_habito(datos: HabitoCreate, db: Session = Depends(get_db)):
+def crear_habito(datos: HabitoCreate, db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
     return habito_service.crear_habito(datos, db=db)
 
 
@@ -54,6 +54,7 @@ def listar_habitos(
     limite: int | None = Query(None, description="Cantidad de elementos por página (1 a 100)"),
     tamano_pagina: int | None = Query(None, description="Alias compatible de limite"),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return habito_service.listar_habitos_paginado(
         usuario_id=usuario_id,
@@ -82,6 +83,7 @@ def listar_habitos(
 def obtener_habito(
     habito_id: int = Path(..., description="ID del hábito", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return habito_service.obtener_habito(habito_id, db=db)
 
@@ -102,6 +104,7 @@ def actualizar_habito(
     habito_id: int = Path(..., description="ID del hábito a actualizar", ge=1),
     datos: HabitoUpdate = ...,
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return habito_service.actualizar_habito(habito_id, datos, db=db)
 
@@ -119,5 +122,15 @@ def actualizar_habito(
 def eliminar_habito(
     habito_id: int = Path(..., description="ID del hábito a archivar", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     habito_service.eliminar_habito(habito_id, db=db)
+
+
+@router.post("/{habito_id}/desarchivar", response_model=HabitoResponse)
+def desarchivar_habito(
+    habito_id: int = Path(..., ge=1),
+    db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
+):
+    return habito_service.desarchivar_habito(habito_id, db=db)

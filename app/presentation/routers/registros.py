@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
 
 from app.application.services import registro_service
-from app.presentation.dependencies import get_db
+from app.presentation.dependencies import get_db, get_usuario_actual
 from app.presentation.schemas.registro_schema import (
     RegistroHabitoCreate,
     RegistroHabitoResponse,
@@ -28,7 +28,7 @@ router = APIRouter(
         409: {"description": "Ya existe un registro para esta fecha."},
     },
 )
-def crear_registro_habito(datos: RegistroHabitoCreate, db: Session = Depends(get_db)):
+def crear_registro_habito(datos: RegistroHabitoCreate, db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
     return registro_service.crear_registro_habito(datos, db=db)
 
 
@@ -41,7 +41,7 @@ def crear_registro_habito(datos: RegistroHabitoCreate, db: Session = Depends(get
         200: {"description": "Listado de registros obtenido correctamente."},
     },
 )
-def listar_registros_habito(db: Session = Depends(get_db)):
+def listar_registros_habito(db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
     return registro_service.listar_registros_habito(db=db)
 
 
@@ -58,6 +58,7 @@ def listar_registros_habito(db: Session = Depends(get_db)):
 def obtener_registro_habito(
     registro_id: int = Path(..., description="ID del registro", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return registro_service.obtener_registro_habito(registro_id, db=db)
 
@@ -76,6 +77,7 @@ def actualizar_registro_habito(
     registro_id: int = Path(..., description="ID del registro a actualizar", ge=1),
     datos: RegistroHabitoUpdate = ...,
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return registro_service.actualizar_registro_habito(registro_id, datos, db=db)
 
@@ -93,5 +95,6 @@ def actualizar_registro_habito(
 def eliminar_registro_habito(
     registro_id: int = Path(..., description="ID del registro a eliminar", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     registro_service.eliminar_registro_habito(registro_id, db=db)
