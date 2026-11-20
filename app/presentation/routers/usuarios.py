@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
 
 from app.application.services import usuario_service
-from app.presentation.dependencies import get_db
+from app.presentation.dependencies import get_db, get_usuario_actual
 from app.presentation.schemas.usuario_schema import (
     UsuarioCreate,
     UsuarioResponse,
@@ -40,7 +40,7 @@ def crear_usuario(datos: UsuarioCreate, db: Session = Depends(get_db)):
         200: {"description": "Listado de usuarios obtenido correctamente."},
     },
 )
-def listar_usuarios(db: Session = Depends(get_db)):
+def listar_usuarios(db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
     return usuario_service.listar_usuarios(db=db)
 
 
@@ -57,6 +57,7 @@ def listar_usuarios(db: Session = Depends(get_db)):
 def obtener_usuario(
     usuario_id: int = Path(..., description="ID del usuario", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return usuario_service.obtener_usuario(usuario_id, db=db)
 
@@ -76,6 +77,7 @@ def actualizar_usuario(
     usuario_id: int = Path(..., description="ID del usuario a actualizar", ge=1),
     datos: UsuarioUpdate = ...,
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     return usuario_service.actualizar_usuario(usuario_id, datos, db=db)
 
@@ -94,5 +96,6 @@ def actualizar_usuario(
 def eliminar_usuario(
     usuario_id: int = Path(..., description="ID del usuario a eliminar", ge=1),
     db: Session = Depends(get_db),
+    usuario_actual=Depends(get_usuario_actual),
 ):
     usuario_service.eliminar_usuario(usuario_id, db=db)
