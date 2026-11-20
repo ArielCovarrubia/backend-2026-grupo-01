@@ -9,6 +9,7 @@ def usuario_a_dominio(model: UsuarioModel) -> Usuario:
         email=model.email,
         fecha_registro=model.fecha_registro,
         zona_horaria=model.zona_horaria,
+        password_hash=model.password_hash,
     )
 
 
@@ -19,5 +20,5 @@ def usuario_a_modelo(entity: Usuario) -> UsuarioModel:
         email=str(entity.email),
         fecha_registro=entity.fecha_registro,
         zona_horaria=entity.zona_horaria,
+        password_hash=entity.password_hash,
     )
-

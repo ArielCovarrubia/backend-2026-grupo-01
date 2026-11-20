@@ -31,3 +31,7 @@ class Habito:
     def archivar(self) -> None:
         """Cambia el estado en vez de permitir el borrado físico (regla de negocio)."""
         self.estado = EstadoHabito.ARCHIVADO
+
+    def desarchivar(self) -> None:
+        """Reactiva un hábito archivado (inverso de archivar)."""
+        self.estado = EstadoHabito.ACTIVO
