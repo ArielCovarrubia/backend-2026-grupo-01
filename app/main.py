@@ -18,7 +18,7 @@ from app.infrastructure.models import (
     RegistroHabitoModel,
     UsuarioModel,
 )
-from app.presentation.routers import categorias, habitos, registros, usuarios
+from app.presentation.routers import auth, categorias, habitos, registros, usuarios
 
 Base.metadata.create_all(bind=engine)
 
@@ -136,6 +136,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 
 app.include_router(usuarios.router)
+app.include_router(auth.router)
 app.include_router(categorias.router)
 app.include_router(habitos.router)
 app.include_router(registros.router)
