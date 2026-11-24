@@ -1,5 +1,3 @@
-import pytest
-
 from tests.conftest import assert_error
 
 
@@ -18,21 +16,33 @@ def test_corregido_no_crear_habito_en_categoria_inactiva(client, usuario, catego
     client.put(f"/categorias/{categoria['id']}", json={"activa": False})
     r = client.post(
         "/habitos/",
-        json={"usuario_id": usuario["id"], "categoria_id": categoria["id"], "nombre": "Correr", "frecuencia_semanal": 3},
+        json={
+            "usuario_id": usuario["id"],
+            "categoria_id": categoria["id"],
+            "nombre": "Correr",
+            "frecuencia_semanal": 3,
+        },
     )
     assert r.status_code >= 400
 
 
 def test_corregido_no_crear_registro_en_habito_archivado(client, habito, ayer):
     client.delete(f"/habitos/{habito['id']}")
-    r = client.post("/registros/", json={"habito_id": habito["id"], "fecha_registro": ayer})
+    r = client.post(
+        "/registros/", json={"habito_id": habito["id"], "fecha_registro": ayer}
+    )
     assert r.status_code >= 400
 
 
 def test_corregido_filtro_estado_invalido_es_error(client):
-    assert_error(client.get("/habitos/", params={"estado": "xyz"}), 400, "BUSINESS_RULE_ERROR")
+    assert_error(
+        client.get("/habitos/", params={"estado": "xyz"}), 400, "BUSINESS_RULE_ERROR"
+    )
 
 
 def test_corregido_nota_solo_espacios_se_rechaza(client, habito, ayer):
-    r = client.post("/registros/", json={"habito_id": habito["id"], "fecha_registro": ayer, "nota": "     "})
+    r = client.post(
+        "/registros/",
+        json={"habito_id": habito["id"], "fecha_registro": ayer, "nota": "     "},
+    )
     assert r.status_code == 422

@@ -8,7 +8,9 @@ def _body(habito_id, fecha, **extra):
 
 
 def test_crear_registro(client, habito, ayer):
-    r = client.post("/registros/", json=_body(habito["id"], ayer, valor_medido=30.5, nota="30 min"))
+    r = client.post(
+        "/registros/", json=_body(habito["id"], ayer, valor_medido=30.5, nota="30 min")
+    )
     assert r.status_code == 201
     cuerpo = r.json()
     assert cuerpo["id"] == 1
@@ -39,9 +41,16 @@ def test_obtener_registro(client, registro):
 
 
 def test_actualizar_registro(client, registro):
-    r = client.put(f"/registros/{registro['id']}", json={"completado": False, "valor_medido": 10, "nota": "cansado"})
+    r = client.put(
+        f"/registros/{registro['id']}",
+        json={"completado": False, "valor_medido": 10, "nota": "cansado"},
+    )
     assert r.status_code == 200
-    assert (r.json()["completado"], r.json()["valor_medido"], r.json()["nota"]) == (False, 10, "cansado")
+    assert (r.json()["completado"], r.json()["valor_medido"], r.json()["nota"]) == (
+        False,
+        10,
+        "cansado",
+    )
     assert r.json()["fecha_registro"] == registro["fecha_registro"]
 
 
@@ -57,20 +66,29 @@ def test_registro_fecha_futura(client, habito, manana):
 
 def test_registro_duplicado_misma_fecha(client, habito, ayer):
     assert client.post("/registros/", json=_body(habito["id"], ayer)).status_code == 201
-    assert_error(client.post("/registros/", json=_body(habito["id"], ayer)), 409, "CONFLICT")
+    assert_error(
+        client.post("/registros/", json=_body(habito["id"], ayer)), 409, "CONFLICT"
+    )
 
 
 def test_misma_fecha_en_otro_habito_es_valida(client, habito, ayer):
     otro = client.post(
         "/habitos/",
-        json={"usuario_id": habito["usuario_id"], "categoria_id": habito["categoria_id"], "nombre": "Nadar", "frecuencia_semanal": 2},
+        json={
+            "usuario_id": habito["usuario_id"],
+            "categoria_id": habito["categoria_id"],
+            "nombre": "Nadar",
+            "frecuencia_semanal": 2,
+        },
     ).json()
     assert client.post("/registros/", json=_body(habito["id"], ayer)).status_code == 201
     assert client.post("/registros/", json=_body(otro["id"], ayer)).status_code == 201
 
 
 def test_registro_habito_inexistente(client, ayer):
-    assert_error(client.post("/registros/", json=_body(999, ayer)), 404, "RESOURCE_NOT_FOUND")
+    assert_error(
+        client.post("/registros/", json=_body(999, ayer)), 404, "RESOURCE_NOT_FOUND"
+    )
 
 
 @pytest.mark.parametrize("metodo", ["get", "delete"])
@@ -79,7 +97,11 @@ def test_registro_inexistente_get_delete(client, metodo):
 
 
 def test_actualizar_registro_inexistente(client):
-    assert_error(client.put("/registros/999", json={"completado": False}), 404, "RESOURCE_NOT_FOUND")
+    assert_error(
+        client.put("/registros/999", json={"completado": False}),
+        404,
+        "RESOURCE_NOT_FOUND",
+    )
 
 
 @pytest.mark.parametrize(
@@ -103,11 +125,19 @@ def test_crear_registro_sin_campos_obligatorios(client):
 
 
 def test_actualizar_registro_valor_negativo(client, registro):
-    assert_error(client.put(f"/registros/{registro['id']}", json={"valor_medido": -5}), 422, "VALIDATION_ERROR")
+    assert_error(
+        client.put(f"/registros/{registro['id']}", json={"valor_medido": -5}),
+        422,
+        "VALIDATION_ERROR",
+    )
 
 
 def test_actualizar_registro_nota_solo_espacios(client, registro):
-    assert_error(client.put(f"/registros/{registro['id']}", json={"nota": "     "}), 422, "VALIDATION_ERROR")
+    assert_error(
+        client.put(f"/registros/{registro['id']}", json={"nota": "     "}),
+        422,
+        "VALIDATION_ERROR",
+    )
 
 
 def test_nota_se_guarda_sin_espacios_laterales(client, habito, ayer):

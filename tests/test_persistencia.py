@@ -17,7 +17,16 @@ def _puerto_libre() -> int:
 def _levantar(url_bd: str, puerto: int) -> subprocess.Popen:
     entorno = {**os.environ, "DATABASE_URL": url_bd}
     proceso = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(puerto), "--log-level", "warning"],
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "app.main:app",
+            "--port",
+            str(puerto),
+            "--log-level",
+            "warning",
+        ],
         env=entorno,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -44,7 +53,9 @@ def test_datos_persisten_tras_reiniciar_el_servidor(tmp_path):
 
     servidor = _levantar(url_bd, puerto)
     try:
-        r = httpx.post(f"{base}/usuarios/", json={"name": "Persistente", "email": "persist@x.cl"})
+        r = httpx.post(
+            f"{base}/usuarios/", json={"name": "Persistente", "email": "persist@x.cl"}
+        )
         assert r.status_code == 201
         usuario_id = r.json()["id"]
     finally:
