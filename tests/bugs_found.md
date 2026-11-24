@@ -11,4 +11,5 @@
 
 ## Confirmed findings
 
-- None recorded yet.
+- `app/domain/habito.py`, `test_active_habit_cannot_be_unarchived_again`: expected HTTP 400 when asking to unarchive an already active habit; actual `desarchivar()` unconditionally assigns `ACTIVO`, so the route succeeds. The regression case is marked xfail.
+- `app/presentation/routers/habitos.py`, `test_user_cannot_unarchive_another_users_habit`: expected 403 or 404 for a habit owned by another user; actual route passes the ID directly to the service without checking ownership. The regression case is marked xfail.
