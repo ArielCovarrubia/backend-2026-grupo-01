@@ -28,7 +28,9 @@ def test_obtener_usuario(client, usuario):
 
 
 def test_actualizar_usuario(client, usuario):
-    r = client.put(f"/usuarios/{usuario['id']}", json={"name": "Pato", "email": "nuevo@alu.uct.cl"})
+    r = client.put(
+        f"/usuarios/{usuario['id']}", json={"name": "Pato", "email": "nuevo@alu.uct.cl"}
+    )
     assert r.status_code == 200
     assert r.json()["name"] == "Pato"
     assert r.json()["email"] == "nuevo@alu.uct.cl"
@@ -57,7 +59,9 @@ def test_crear_usuario_email_duplicado(client, usuario):
 
 
 def test_actualizar_usuario_email_de_otro(client, usuario):
-    otro = client.post("/usuarios/", json={"name": "Otro", "email": "otro@alu.uct.cl"}).json()
+    otro = client.post(
+        "/usuarios/", json={"name": "Otro", "email": "otro@alu.uct.cl"}
+    ).json()
     r = client.put(f"/usuarios/{otro['id']}", json={"email": usuario["email"]})
     assert_error(r, 409, "CONFLICT")
 
@@ -67,7 +71,9 @@ def test_obtener_usuario_inexistente(client):
 
 
 def test_actualizar_usuario_inexistente(client):
-    assert_error(client.put("/usuarios/999", json={"name": "Ana"}), 404, "RESOURCE_NOT_FOUND")
+    assert_error(
+        client.put("/usuarios/999", json={"name": "Ana"}), 404, "RESOURCE_NOT_FOUND"
+    )
 
 
 def test_eliminar_usuario_inexistente(client):
@@ -75,7 +81,11 @@ def test_eliminar_usuario_inexistente(client):
 
 
 def test_crear_usuario_email_invalido(client):
-    error = assert_error(client.post("/usuarios/", json={"name": "Ana", "email": "no-es-email"}), 422, "VALIDATION_ERROR")
+    error = assert_error(
+        client.post("/usuarios/", json={"name": "Ana", "email": "no-es-email"}),
+        422,
+        "VALIDATION_ERROR",
+    )
     assert any(d["field"] == "email" for d in error["details"])
 
 
@@ -85,7 +95,11 @@ def test_crear_usuario_nombre_solo_espacios(client):
 
 
 def test_crear_usuario_nombre_muy_corto(client):
-    assert_error(client.post("/usuarios/", json={"name": "A", "email": "a@correo.cl"}), 422, "VALIDATION_ERROR")
+    assert_error(
+        client.post("/usuarios/", json={"name": "A", "email": "a@correo.cl"}),
+        422,
+        "VALIDATION_ERROR",
+    )
 
 
 def test_crear_usuario_nombre_muy_largo(client):

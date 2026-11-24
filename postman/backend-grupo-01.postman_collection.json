@@ -1,0 +1,115 @@
+{
+  "info": {
+    "_postman_id": "93cb4837-6760-4c80-8be8-91c645c6e7bd",
+    "name": "Backend Grupo 01 Habits API",
+    "description": "QA requests for authentication, habits, categories, records, and health checks.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "access_token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "reset_token", "value": "" },
+    { "key": "user_id", "value": "1" },
+    { "key": "habit_id", "value": "1" },
+    { "key": "category_id", "value": "1" },
+    { "key": "record_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ana Example\",\n  \"email\": \"{{test_email}}\",\n  \"password\": \"example-password-123\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/usuarios/"
+      },
+      "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.environment.set('test_email', 'qa+' + Date.now() + '@x.cl');"] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('registration returns 201', function () { pm.response.to.have.status(201); });", "if (pm.response.code === 201) pm.environment.set('user_id', pm.response.json().id);"] } }]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"example-password-123\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/login"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('login returns 200', function () { pm.response.to.have.status(200); });", "if (pm.response.code === 200) pm.environment.set('access_token', pm.response.json().access_token);", "if (pm.cookies.get('refresh_token')) pm.environment.set('refresh_token', pm.cookies.get('refresh_token'));"] } }]
+    },
+    {
+      "name": "Refresh",
+      "request": { "method": "POST", "header": [], "url": "{{base_url}}/auth/refresh" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('refresh returns 200', function () { pm.response.to.have.status(200); });", "if (pm.response.code === 200) pm.environment.set('access_token', pm.response.json().access_token);"] } }]
+    },
+    {
+      "name": "Logout",
+      "request": { "method": "POST", "header": [], "url": "{{base_url}}/auth/logout" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('logout returns 204', function () { pm.response.to.have.status(204); });"] } }]
+    },
+    {
+      "name": "Logout all sessions",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/auth/logout-todos" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('logout all returns 204', function () { pm.response.to.have.status(204); });"] } }]
+    },
+    {
+      "name": "Current user",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/auth/me" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('current user returns 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "Request password recovery",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{test_email}}\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/forgot-password"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('recovery request returns 200', function () { pm.response.to.have.status(200); });", "if (pm.response.code === 200 && pm.response.json().token) pm.environment.set('reset_token', pm.response.json().token);"] } }]
+    },
+    {
+      "name": "Reset password",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"token\": \"{{reset_token}}\",\n  \"password\": \"new-password-123\"\n}", "options": { "raw": { "language": "json" } } },
+        "url": "{{base_url}}/auth/reset-password"
+      },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('password reset returns 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "List habits",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/habitos/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('habits return 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "List categories",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/categorias/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('categories return 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "List records",
+      "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/registros/" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('records return 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "Unarchive habit",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/habitos/{{habit_id}}/desarchivar" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('unarchive returns 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "Activate category",
+      "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/categorias/{{category_id}}/activar" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('category activation returns 200', function () { pm.response.to.have.status(200); });"] } }]
+    },
+    {
+      "name": "Delete category",
+      "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/categorias/{{category_id}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('category deletion returns 204', function () { pm.response.to.have.status(204); });"] } }]
+    },
+    {
+      "name": "Health check",
+      "request": { "method": "GET", "header": [], "url": "{{base_url}}/health" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('health returns 200', function () { pm.response.to.have.status(200); });"] } }]
+    }
+  ]
+}

@@ -22,9 +22,21 @@ dependencies = [
 dev = [
     "httpx>=0.28.1",
     "pytest>=8.4.0",
+    "pytest-cov>=7.1.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "integration: tests that use persistent database behavior",
+    "api: end-to-end API tests",
+]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
