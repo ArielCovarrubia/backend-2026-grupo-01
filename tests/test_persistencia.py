@@ -54,7 +54,12 @@ def test_datos_persisten_tras_reiniciar_el_servidor(tmp_path):
     servidor = _levantar(url_bd, puerto)
     try:
         r = httpx.post(
-            f"{base}/usuarios/", json={"name": "Persistente", "email": "persist@x.cl"}
+            f"{base}/usuarios/",
+            json={
+                "name": "Persistente",
+                "email": "persist@x.cl",
+                "password": "example-password-123",
+            },
         )
         assert r.status_code == 201
         usuario_id = r.json()["id"]
@@ -64,6 +69,16 @@ def test_datos_persisten_tras_reiniciar_el_servidor(tmp_path):
     servidor = _levantar(url_bd, puerto)
     try:
         r = httpx.get(f"{base}/usuarios/{usuario_id}")
+        assert r.status_code == 401
+        login = httpx.post(
+            f"{base}/auth/login",
+            json={"email": "persist@x.cl", "password": "example-password-123"},
+        )
+        assert login.status_code == 200
+        r = httpx.get(
+            f"{base}/usuarios/{usuario_id}",
+            headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+        )
         assert r.status_code == 200
         assert r.json()["email"] == "persist@x.cl"
     finally:

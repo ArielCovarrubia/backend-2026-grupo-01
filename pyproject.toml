@@ -33,3 +33,10 @@ markers = [
     "integration: tests that use persistent database behavior",
     "api: end-to-end API tests",
 ]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true

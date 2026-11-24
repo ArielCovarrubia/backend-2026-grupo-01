@@ -7,7 +7,7 @@ def test_register_login_bearer_logout_and_reject_refresh(client_sin_login):
         "/usuarios/",
         json={
             "name": "Ana Example",
-            "email": "e2e-access@example.test",
+            "email": "e2e-access@x.cl",
             "password": "example-password-123",
         },
     )
@@ -15,7 +15,7 @@ def test_register_login_bearer_logout_and_reject_refresh(client_sin_login):
 
     login = client_sin_login.post(
         "/auth/login",
-        json={"email": "e2e-access@example.test", "password": "example-password-123"},
+        json={"email": "e2e-access@x.cl", "password": "example-password-123"},
     )
     assert login.status_code == 200, login.text
     access_token = login.json()["access_token"]
@@ -37,13 +37,13 @@ def test_password_recovery_is_single_use_and_updates_login(client_sin_login):
         "/usuarios/",
         json={
             "name": "Ana Example",
-            "email": "e2e-recovery@example.test",
+            "email": "e2e-recovery@x.cl",
             "password": "old-password-123",
         },
     )
 
     recovery = client_sin_login.post(
-        "/auth/forgot-password", json={"email": "e2e-recovery@example.test"}
+        "/auth/forgot-password", json={"email": "e2e-recovery@x.cl"}
     )
     assert recovery.status_code == 200
     reset_token = recovery.json()["token"]
@@ -56,11 +56,11 @@ def test_password_recovery_is_single_use_and_updates_login(client_sin_login):
 
     old_login = client_sin_login.post(
         "/auth/login",
-        json={"email": "e2e-recovery@example.test", "password": "old-password-123"},
+        json={"email": "e2e-recovery@x.cl", "password": "old-password-123"},
     )
     new_login = client_sin_login.post(
         "/auth/login",
-        json={"email": "e2e-recovery@example.test", "password": "new-password-123"},
+        json={"email": "e2e-recovery@x.cl", "password": "new-password-123"},
     )
     assert old_login.status_code == 401
     assert new_login.status_code == 200

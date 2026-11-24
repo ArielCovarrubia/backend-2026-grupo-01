@@ -43,7 +43,7 @@ def session():
 @pytest.fixture
 def create_user(session):
     def factory(
-        email: str = "ana@example.test",
+        email: str = "ana@x.cl",
         password: str = "example-password-123",
         name: str = "Ana Example",
         role: str = "usuario",
@@ -66,7 +66,7 @@ def create_user(session):
 
 @pytest.fixture
 def admin_user(create_user):
-    return create_user(email="admin@example.test", role="admin")
+    return create_user(email="admin@x.cl", role="admin")
 
 
 @pytest.fixture
@@ -102,9 +102,7 @@ def client_sin_login(session):
 
 @pytest.fixture
 def client(client_sin_login):
-    simulated_user = Usuario(
-        id=0, name="Test Admin", email="admin@example.test", role="admin"
-    )
+    simulated_user = Usuario(id=0, name="Test Admin", email="admin@x.cl", role="admin")
     app.dependency_overrides[get_usuario_actual] = lambda: simulated_user
     yield client_sin_login
     app.dependency_overrides.pop(get_usuario_actual, None)
@@ -113,7 +111,7 @@ def client(client_sin_login):
 @pytest.fixture
 def usuario(client_sin_login):
     response = client_sin_login.post(
-        "/usuarios/", json={"name": "Patricio", "email": "pato@example.test"}
+        "/usuarios/", json={"name": "Patricio", "email": "pato@x.cl"}
     )
     assert response.status_code == 201, response.text
     return response.json()
@@ -135,7 +133,7 @@ def habito(client, user, categoria):
         json={
             "usuario_id": user.id,
             "categoria_id": categoria["id"],
-            "nombre": "Running",
+            "nombre": "Correr",
             "frecuencia_semanal": 3,
         },
     )

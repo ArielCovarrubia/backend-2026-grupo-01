@@ -143,7 +143,7 @@ def test_user_cannot_unarchive_another_users_habit(
 ):
     from app.application.services.habito_service import eliminar_habito
 
-    other_user = create_user(email="other-owner@example.test")
+    other_user = create_user(email="other-owner@x.cl")
     category = create_category(session, "Other owner category")
     habit = create_habit(session, other_user.id, category.id)
     eliminar_habito(habit.id, db=session)
