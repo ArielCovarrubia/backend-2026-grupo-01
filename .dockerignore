@@ -8,8 +8,10 @@ __pycache__/
 *.pyd
 .Python
 
-# Pytest / coverage
+# Pytest / coverage / linter
 .pytest_cache/
+.ruff_cache/
+coverage.xml
 .coverage
 htmlcov/
 
@@ -17,8 +19,9 @@ htmlcov/
 *.db
 *.sqlite
 
-# Variables de entorno reales (sólo se copia .env.example)
+# Variables de entorno: nunca deben entrar a la imagen
 .env
+.env.*
 
 # Git
 .git/
@@ -26,6 +29,7 @@ htmlcov/
 
 # Documentación / extras
 README.md
+docs/
 postman/
 test_manual/
 tests/
