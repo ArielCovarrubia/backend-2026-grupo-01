@@ -1,0 +1,37 @@
+# Entorno virtual Python
+.venv/
+
+# Caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Base de datos local SQLite
+*.db
+*.sqlite
+
+# Variables de entorno reales (sólo se copia .env.example)
+.env
+
+# Git
+.git/
+.gitignore
+
+# Documentación / extras
+README.md
+postman/
+test_manual/
+tests/
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
