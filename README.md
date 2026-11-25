@@ -220,7 +220,7 @@ Edita `.env` y completa las dos variables obligatorias (sin dejar espacios ni ca
   ```
 
 ### 2. Construir e iniciar los servicios
-Para construir las imágenes y levantar todos los contenedores en segundo plano[cite: 9]:
+Para construir las imágenes y levantar todos los contenedores en segundo plano:
 
 ```bash
 docker compose up --build -d
@@ -231,7 +231,7 @@ Si ya construiste las imágenes previamente y solo quieres iniciar los servicios
 docker compose up -d
 ```
 
-Al iniciar, el contenedor de la API ejecuta automáticamente `alembic upgrade head` para aplicar las migraciones sobre PostgreSQL[cite: 9].
+Al iniciar, el contenedor de la API ejecuta automáticamente `alembic upgrade head` para aplicar las migraciones sobre PostgreSQL.
 
 ### 3. Servicios y puertos disponibles
 Con la configuración por defecto de `.env`, los servicios quedan accesibles en:
