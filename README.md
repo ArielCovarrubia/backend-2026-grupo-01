@@ -49,6 +49,10 @@ Este proyecto está centralizado en solucionar la dificultad de medir el progres
 - Uvicorn
 - SQLAlchemy (ORM)
 - Alembic (Migraciones)
+- PostgreSQL
+- Docker / Docker Compose
+- Adminer 
+- Mailpit
 
 ## Arquitectura por Capas
 El proyecto implementa una estricta separación por responsabilidades para garantizar la modularidad, testeabilidad y mantenimiento:
@@ -184,6 +188,9 @@ migrations/               # Migraciones Alembic
 test_manual/              # Colección Postman, casos de prueba y registro de bugs
 tests/                    # Pruebas automatizadas con pytest
 .env.example              # Variables de entorno sin secretos
+Dockerfile              # Imagen multi-etapa (Python 3.14-slim + uv sin root)
+docker-compose.yml      # Orquestación de API, PostgreSQL, Adminer y Mailpit
+.dockerignore           # Exclusiones del contexto de construcción Docker
 alembic.ini               # Configuración de Alembic
 pyproject.toml            # Dependencias del proyecto
 uv.lock                   # Versiones bloqueadas de dependencias
@@ -193,6 +200,74 @@ README.md                 # Documentación principal
 - [uv](https://docs.astral.sh/uv/) (probado con 0.12.13).
 - Python >= 3.14 (probado con 3.14.7).
 > No es necesario instalar Python aparte: al ejecutar `uv sync`, uv descarga automáticamente una versión compatible si no la tienes.
+
+## Ejecución con Docker (Recomendado)
+
+El entorno contenedorizado levanta la API (con endpoint de salud `/health`), PostgreSQL con volumen persistente, **Adminer** como visor de base de datos y **Mailpit** como servidor de correo de prueba[cite: 2, 9].
+
+### 1. Configurar variables de entorno
+Antes de construir o levantar los contenedores, crea el archivo `.env` a partir de la plantilla (sin este archivo `docker compose` fallará al iniciar)[cite: 2, 9]:
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env` y completa las dos variables obligatorias (sin dejar espacios ni caracteres especiales en la contraseña de PostgreSQL, ya que se inserta en la URL de conexión)[cite: 2]:
+- `POSTGRES_PASSWORD`: clave alfanumérica para PostgreSQL.
+- `JWT_SECRET_KEY`: clave secreta para firmar tokens JWT. Puedes generarla con:
+  ```bash
+  python -c "import secrets; print(secrets.token_urlsafe(48))"
+  ```
+
+### 2. Construir e iniciar los servicios
+Para construir las imágenes y levantar todos los contenedores en segundo plano[cite: 9]:
+
+```bash
+docker compose up --build -d
+```
+
+Si ya construiste las imágenes previamente y solo quieres iniciar los servicios:
+```bash
+docker compose up -d
+```
+
+Al iniciar, el contenedor de la API ejecuta automáticamente `alembic upgrade head` para aplicar las migraciones sobre PostgreSQL[cite: 9].
+
+### 3. Servicios y puertos disponibles
+Con la configuración por defecto de `.env`, los servicios quedan accesibles en:
+- **API (Swagger / OpenAPI):** `http://localhost:8000/docs`
+- **Healthcheck de la API:** `http://localhost:8000/health`
+- **Adminer (Visor de BD):** `http://localhost:8080` (Sistema: `PostgreSQL`, Servidor: `db`, Usuario y BD según `.env`)
+- **Mailpit (Bandeja de correo de prueba):** `http://localhost:8025`
+
+### 4. Cargar datos iniciales (Seeders) y migraciones manuales
+Para poblar la base de datos en PostgreSQL con los registros iniciales:
+```bash
+docker compose exec api uv run python -m app.infrastructure.seeders.seed
+```
+
+Si necesitas ejecutar o revisar migraciones manualmente dentro del contenedor:
+```bash
+docker compose exec api uv run alembic upgrade head
+docker compose exec api uv run alembic current
+```
+
+### 5. Revisar logs y detener los contenedores
+Para ver los registros en tiempo real de todos los servicios o solo de la API:
+```bash
+docker compose logs -f
+docker compose logs -f api
+```
+
+Para detener y eliminar los contenedores conservando los datos de PostgreSQL:
+```bash
+docker compose down
+```
+
+Para detener los contenedores y borrar también el volumen de la base de datos (reinicio limpio):
+```bash
+docker compose down -v
+```
 
 ## Ejecución del proyecto
 Para ejecutar este proyecto localmente desde una copia limpia utilizando `uv`, sigue estos pasos en tu terminal:
