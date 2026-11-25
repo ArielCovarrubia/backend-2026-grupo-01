@@ -3,6 +3,7 @@ import socket
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import httpx
 import pytest
@@ -12,6 +13,15 @@ def _puerto_libre() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+def _migrar(url_bd: str) -> None:
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        env={**os.environ, "DATABASE_URL": url_bd},
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+    )
 
 
 def _levantar(url_bd: str, puerto: int) -> subprocess.Popen:
@@ -50,6 +60,7 @@ def test_datos_persisten_tras_reiniciar_el_servidor(tmp_path):
     url_bd = f"sqlite:///{tmp_path}/persistencia.db"
     puerto = _puerto_libre()
     base = f"http://127.0.0.1:{puerto}"
+    _migrar(url_bd)
 
     servidor = _levantar(url_bd, puerto)
     try:
