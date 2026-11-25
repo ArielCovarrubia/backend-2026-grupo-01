@@ -203,16 +203,16 @@ README.md                 # Documentación principal
 
 ## Ejecución con Docker (Recomendado)
 
-El entorno contenedorizado levanta la API (con endpoint de salud `/health`), PostgreSQL con volumen persistente, **Adminer** como visor de base de datos y **Mailpit** como servidor de correo de prueba[cite: 2, 9].
+El entorno contenedorizado levanta la API (con endpoint de salud `/health`), PostgreSQL con volumen persistente, **Adminer** como visor de base de datos y **Mailpit** como servidor de correo de prueba.
 
 ### 1. Configurar variables de entorno
-Antes de construir o levantar los contenedores, crea el archivo `.env` a partir de la plantilla (sin este archivo `docker compose` fallará al iniciar)[cite: 2, 9]:
+Antes de construir o levantar los contenedores, crea el archivo `.env` a partir de la plantilla (sin este archivo `docker compose` fallará al iniciar):
 
 ```bash
 cp .env.example .env
 ```
 
-Edita `.env` y completa las dos variables obligatorias (sin dejar espacios ni caracteres especiales en la contraseña de PostgreSQL, ya que se inserta en la URL de conexión)[cite: 2]:
+Edita `.env` y completa las dos variables obligatorias (sin dejar espacios ni caracteres especiales en la contraseña de PostgreSQL, ya que se inserta en la URL de conexión):
 - `POSTGRES_PASSWORD`: clave alfanumérica para PostgreSQL.
 - `JWT_SECRET_KEY`: clave secreta para firmar tokens JWT. Puedes generarla con:
   ```bash
