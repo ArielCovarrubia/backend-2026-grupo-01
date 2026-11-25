@@ -11,16 +11,14 @@ from app.domain.exceptions import (
     RecursoNoEncontradoError,
     ReglaNegocioError,
 )
-from app.infrastructure.database import Base, engine
-from app.infrastructure.models import (
-    CategoriaModel,
-    HabitoModel,
-    RegistroHabitoModel,
-    UsuarioModel,
+from app.presentation.routers import (
+    auth,
+    categorias,
+    habitos,
+    health,
+    registros,
+    usuarios,
 )
-from app.presentation.routers import auth, categorias, habitos, registros, usuarios
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="API de Seguimiento de Hábitos de Bienestar",
@@ -140,6 +138,7 @@ app.include_router(auth.router)
 app.include_router(categorias.router)
 app.include_router(habitos.router)
 app.include_router(registros.router)
+app.include_router(health.router)
 
 
 ESQUEMA_ERROR = {
@@ -185,6 +184,13 @@ EJEMPLOS_ERROR = {
             "code": "VALIDATION_ERROR",
             "message": "Los datos enviados no son válidos.",
             "details": [{"field": "email", "message": "value is not a valid email address"}],
+        }
+    },
+    "503": {
+        "error": {
+            "code": "HTTP_ERROR",
+            "message": "Base de datos no disponible.",
+            "details": [],
         }
     },
 }

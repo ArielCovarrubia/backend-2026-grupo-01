@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from app.infrastructure.database import Base, SessionLocal, engine
+from app.infrastructure.database import SessionLocal
 from app.infrastructure.models import (
     CategoriaModel,
     HabitoModel,
@@ -9,7 +9,6 @@ from app.infrastructure.models import (
 
 
 def ejecutar_seeders():
-    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         if db.query(UsuarioModel).first() is not None:
@@ -44,4 +43,3 @@ def ejecutar_seeders():
 
 if __name__ == "__main__":
     ejecutar_seeders()
-
