@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+
+from app.domain.exceptions import ReglaNegocioError
  
  
 class EstadoHabito(str, Enum):
@@ -34,4 +36,6 @@ class Habito:
 
     def desarchivar(self) -> None:
         """Reactiva un hábito archivado (inverso de archivar)."""
+        if self.estado != EstadoHabito.ARCHIVADO:
+            raise ReglaNegocioError("Solo se puede desarchivar un hábito archivado.")
         self.estado = EstadoHabito.ACTIVO

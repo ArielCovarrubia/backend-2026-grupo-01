@@ -136,4 +136,9 @@ def desarchivar_habito(habito_id: int, db: Session | None = None) -> Habito:
     if habito is None:
         raise RecursoNoEncontradoError("Hábito no encontrado.")
     habito.desarchivar()
+
+    categoria = categoria_repository.obtener(habito.categoria_id, db=db)
+    if categoria is None or not categoria.activa:
+        raise ReglaNegocioError("No se puede desarchivar un hábito de una categoría inactiva.")
+
     return habito_repository.actualizar(habito_id, habito, db=db)
