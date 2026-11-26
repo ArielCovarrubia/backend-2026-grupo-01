@@ -1,9 +1,9 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-import jwt
 from sqlalchemy.orm import Session
 
 from app.application.services.auth_service import decode_token
+from app.domain.exceptions import TokenInvalido
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories import usuario_repository
 
@@ -19,7 +19,7 @@ def get_usuario_actual(
     try:
         payload = decode_token(credentials.credentials, "access")
         usuario = usuario_repository.obtener(int(payload["sub"]), db=db)
-    except (ValueError, TypeError, jwt.InvalidTokenError):
+    except (ValueError, TypeError, TokenInvalido):
         usuario = None
     if usuario is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido o expirado.")

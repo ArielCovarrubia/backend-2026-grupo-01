@@ -1,8 +1,10 @@
 import importlib
+from datetime import timedelta
 
-import jwt
 import pytest
 from pydantic import ValidationError
+
+from app.domain.exceptions import TokenInvalido
 
 
 @pytest.mark.xfail(reason="RegistroDTO with the required password policy is pending.")
@@ -40,22 +42,29 @@ def test_argon2id_hashes_use_distinct_salts_and_verify_password():
     assert verify_password(password, second_hash)
 
 
-@pytest.mark.xfail(
-    reason="TokenInvalido is pending; current code raises PyJWT exceptions."
-)
 def test_tampered_jwt_signature_raises_token_invalido():
-    service = importlib.import_module("app.application.services.auth_service")
-    exceptions = importlib.import_module("app.domain.exceptions")
-    token_invalido = vars(exceptions)["TokenInvalido"]
-    token = service.create_access_token(1)
-    header, payload, signature = token.split(".")
-    tampered = f"{header}.{payload}.{signature[:-1]}x"
-    with pytest.raises(token_invalido):
-        service.decode_token(tampered, "access")
+    from app.application.services.auth_service import (
+        create_access_token,
+        decode_token,
+    )
+
+    header, payload, signature = create_access_token(1).split(".")
+    first = "A" if signature[0] != "A" else "B"
+    tampered = f"{header}.{payload}.{first}{signature[1:]}"
+    with pytest.raises(TokenInvalido):
+        decode_token(tampered, "access")
+
+
+def test_expired_token_raises_token_invalido():
+    from app.infrastructure.security.tokens import decode_token, encode_token
+
+    expired = encode_token(1, "access", timedelta(seconds=-1))
+    with pytest.raises(TokenInvalido):
+        decode_token(expired, "access")
 
 
 def test_access_token_is_rejected_as_reset_token():
     from app.application.services.auth_service import create_access_token, decode_token
 
-    with pytest.raises(jwt.InvalidTokenError):
+    with pytest.raises(TokenInvalido):
         decode_token(create_access_token(1), "reset")
