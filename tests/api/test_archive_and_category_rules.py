@@ -93,13 +93,31 @@ def test_archived_habit_can_be_unarchived(client_sin_login, session, user):
     assert response.json()["estado"] == "ACTIVO"
 
 
+
 @pytest.mark.api
-@pytest.mark.xfail(
-    reason="The domain currently reactivates non-archived habits without an error."
-)
 def test_active_habit_cannot_be_unarchived_again(client_sin_login, session, user):
     category = create_category(session, "Already active category")
     habit = create_habit(session, user.id, category.id)
+
+    response = client_sin_login.post(
+        f"/habitos/{habit.id}/desarchivar", headers=headers_for(user.id)
+    )
+
+    assert response.status_code == 400
+
+
+@pytest.mark.api
+def test_habit_of_inactive_category_cannot_be_unarchived(
+    client_sin_login, session, user
+):
+    from app.application.services.categoria_service import actualizar_categoria
+    from app.application.services.habito_service import eliminar_habito
+    from app.presentation.schemas.categoria_schema import CategoriaUpdate
+
+    category = create_category(session, "Disabled category")
+    habit = create_habit(session, user.id, category.id)
+    eliminar_habito(habit.id, db=session)
+    actualizar_categoria(category.id, CategoriaUpdate(activa=False), db=session)
 
     response = client_sin_login.post(
         f"/habitos/{habit.id}/desarchivar", headers=headers_for(user.id)

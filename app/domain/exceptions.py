@@ -39,3 +39,13 @@ class ReglaNegocioError(DominioException):
         details: list | None = None,
     ):
         super().__init__(message, code=code, details=details)
+
+
+class TokenInvalido(DominioException):
+    def __init__(
+        self,
+        message: str = "Token inválido o expirado.",
+        code: str = "INVALID_TOKEN",
+        details: list | None = None,
+    ):
+        super().__init__(message, code=code, details=details)

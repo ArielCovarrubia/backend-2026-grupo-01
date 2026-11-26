@@ -13,4 +13,7 @@ class UsuarioModel(Base):
     zona_horaria = Column(String(50), default="America/Santiago", nullable=False)
     password_hash = Column(String(255), nullable=True)
     role = Column(String(20), nullable=False, default="usuario")
+    intentos_fallidos = Column(Integer, nullable=False, default=0, server_default="0")
+    bloqueado_hasta = Column(DateTime, nullable=True)
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     habitos = relationship("HabitoModel", back_populates="usuario", cascade="all, delete-orphan")

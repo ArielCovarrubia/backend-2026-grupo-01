@@ -227,7 +227,7 @@ docker compose up --build -d
 ```
 
 Si ya construiste las imágenes previamente y solo quieres iniciar los servicios:
-```bash
+```bash1
 docker compose up -d
 ```
 
@@ -243,13 +243,13 @@ Con la configuración por defecto de `.env`, los servicios quedan accesibles en:
 ### 4. Cargar datos iniciales (Seeders) y migraciones manuales
 Para poblar la base de datos en PostgreSQL con los registros iniciales:
 ```bash
-docker compose exec api uv run python -m app.infrastructure.seeders.seed
+docker compose exec api python -m app.infrastructure.seeders.seed
 ```
 
 Si necesitas ejecutar o revisar migraciones manualmente dentro del contenedor:
 ```bash
-docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run alembic current
+docker compose exec api alembic upgrade head
+docker compose exec api alembic current
 ```
 
 ### 5. Revisar logs y detener los contenedores
