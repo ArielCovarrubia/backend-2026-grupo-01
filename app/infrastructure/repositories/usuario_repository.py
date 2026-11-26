@@ -64,6 +64,9 @@ def actualizar(usuario_id: int, usuario: Usuario, db: Session | None = None) -> 
             modelo.zona_horaria = usuario.zona_horaria
             modelo.password_hash = usuario.password_hash
             modelo.role = usuario.role
+        modelo.intentos_fallidos = usuario.intentos_fallidos
+        modelo.bloqueado_hasta = usuario.bloqueado_hasta
+        modelo.token_version = usuario.token_version
         s.commit()
         s.refresh(modelo)
         return usuario_a_dominio(modelo)

@@ -41,9 +41,22 @@ def test_global_logout_increments_token_version_and_revokes_refresh_tokens(
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(
-    reason="Account lockout persistence is pending in the domain and model."
-)
+def test_repository_persists_lockout_and_token_version(session, user):
+    from app.infrastructure.repositories import usuario_repository
+
+    for _ in range(5):
+        user.registrar_fallo()
+    user.incrementar_token_version()
+    usuario_repository.actualizar(user.id, user, db=session)
+    session.expire_all()
+
+    stored = usuario_repository.obtener(user.id, db=session)
+    assert stored.intentos_fallidos == 5
+    assert stored.esta_bloqueado()
+    assert stored.token_version == 1
+
+
+@pytest.mark.integration
 def test_five_failed_logins_persist_future_lockout(session, user):
     from app.domain.usuario import Usuario
     from app.infrastructure.models.usuario_model import UsuarioModel
