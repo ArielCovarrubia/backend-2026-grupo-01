@@ -10,20 +10,9 @@ from app.presentation.schemas.auth_schema import (
     ResetPasswordRequest,
     TokenResponse,
 )
+from app.presentation.security.cookies import clear_refresh_cookie, set_refresh_cookie
 
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
-
-
-def _set_refresh_cookie(response: Response, token: str) -> None:
-    response.set_cookie(
-        "refresh_token",
-        token,
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=auth_service.REFRESH_TOKEN_DAYS * 86400,
-        path="/auth",
-    )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -32,7 +21,7 @@ def login(datos: LoginRequest, response: Response, db: Session = Depends(get_db)
     if usuario is None or not auth_service.verify_password(datos.password, usuario.password_hash):
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos.")
     refresh = auth_service.create_refresh_token(usuario.id, db)
-    _set_refresh_cookie(response, refresh)
+    set_refresh_cookie(response, refresh)
     return {"access_token": auth_service.create_access_token(usuario.id), "token_type": "bearer"}
 
 
@@ -49,7 +38,7 @@ def refresh(
     if rotated is None:
         raise HTTPException(status_code=401, detail="Refresh token inválido o revocado.")
     nuevo_refresh, usuario_id = rotated
-    _set_refresh_cookie(response, nuevo_refresh)
+    set_refresh_cookie(response, nuevo_refresh)
     return {"access_token": auth_service.create_access_token(int(usuario_id)), "token_type": "bearer"}
 
 
@@ -61,7 +50,7 @@ def logout(
 ):
     if refresh_token:
         auth_service.revoke_refresh_token(refresh_token, db)
-    response.delete_cookie("refresh_token", path="/auth")
+    clear_refresh_cookie(response)
 
 
 @router.post("/forgot-password")
