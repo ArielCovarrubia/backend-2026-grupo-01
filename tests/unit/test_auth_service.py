@@ -1,11 +1,11 @@
+from datetime import datetime
 from unittest.mock import Mock
 
 import pytest
 
-from app.domain.usuario import Usuario
+from app.domain.usuario import DURACION_BLOQUEO, Usuario
 
 
-@pytest.mark.xfail(reason="Usuario login lockout state is pending in the domain model.")
 def test_fifth_failed_login_locks_account():
     user = Usuario(id=1, name="Ana", email="ana@example.test")
     for _ in range(5):
@@ -13,12 +13,35 @@ def test_fifth_failed_login_locks_account():
     assert user.esta_bloqueado()
 
 
-@pytest.mark.xfail(reason="Usuario login lockout state is pending in the domain model.")
 def test_fewer_than_five_failed_logins_leave_account_unlocked():
     user = Usuario(id=1, name="Ana", email="ana@example.test")
     for _ in range(4):
         user.registrar_fallo()
     assert not user.esta_bloqueado()
+
+
+def test_lockout_expires_and_counter_starts_again():
+    user = Usuario(id=1, name="Ana", email="ana@example.test")
+    start = datetime(2026, 11, 25, 12, 0)
+    for _ in range(5):
+        user.registrar_fallo(ahora=start)
+
+    after = start + DURACION_BLOQUEO
+    assert not user.esta_bloqueado(ahora=after)
+    user.registrar_fallo(ahora=after)
+    assert user.intentos_fallidos == 1
+    assert user.bloqueado_hasta is None
+
+
+def test_failures_during_lockout_do_not_extend_it():
+    user = Usuario(id=1, name="Ana", email="ana@example.test")
+    start = datetime(2026, 11, 25, 12, 0)
+    for _ in range(5):
+        user.registrar_fallo(ahora=start)
+
+    user.registrar_fallo(ahora=start + DURACION_BLOQUEO / 2)
+
+    assert user.bloqueado_hasta == start + DURACION_BLOQUEO
 
 
 @pytest.mark.parametrize(
