@@ -99,16 +99,20 @@ def actualizar_habito(habito_id: int, datos: HabitoUpdate, db: Session | None = 
     if habito is None:
         raise RecursoNoEncontradoError("Hábito no encontrado.")
 
-    if datos.nombre is not None:
+    if habito.estado == EstadoHabito.ARCHIVADO:
+        raise ReglaNegocioError("Un hábito archivado es de solo lectura; usa desarchivar.")
+
+    cambios = datos.model_fields_set
+    if "nombre" in cambios:
         habitos_usuario = habito_repository.listar_por_usuario(habito.usuario_id, db=db)
         if any(h.nombre.casefold() == datos.nombre.casefold() and h.id != habito_id for h in habitos_usuario):
             raise ConflictoError("El hábito con este nombre ya existe para este usuario.")
         habito.nombre = datos.nombre
 
-    if datos.frecuencia_semanal is not None:
+    if "frecuencia_semanal" in cambios:
         habito.frecuencia_semanal = datos.frecuencia_semanal
 
-    if datos.categoria_id is not None:
+    if "categoria_id" in cambios:
         categoria = categoria_repository.obtener(datos.categoria_id, db=db)
         if categoria is None:
             raise RecursoNoEncontradoError("Categoría no encontrada.")
@@ -116,7 +120,7 @@ def actualizar_habito(habito_id: int, datos: HabitoUpdate, db: Session | None = 
             raise ReglaNegocioError("No se puede asociar un hábito a una categoría inactiva.")
         habito.categoria_id = datos.categoria_id
 
-    if datos.estado is not None:
+    if "estado" in cambios:
         habito.estado = datos.estado
 
     return habito_repository.actualizar(habito_id, habito, db=db)

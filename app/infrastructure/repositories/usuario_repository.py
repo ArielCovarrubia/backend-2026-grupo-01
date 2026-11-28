@@ -62,8 +62,9 @@ def actualizar(usuario_id: int, usuario: Usuario, db: Session | None = None) -> 
         modelo.email = str(usuario.email)
         if hasattr(usuario, "zona_horaria") and usuario.zona_horaria:
             modelo.zona_horaria = usuario.zona_horaria
+        if hasattr(usuario, "password_hash"):
             modelo.password_hash = usuario.password_hash
-            modelo.role = usuario.role
+        modelo.role = usuario.role
         modelo.intentos_fallidos = usuario.intentos_fallidos
         modelo.bloqueado_hasta = usuario.bloqueado_hasta
         modelo.token_version = usuario.token_version

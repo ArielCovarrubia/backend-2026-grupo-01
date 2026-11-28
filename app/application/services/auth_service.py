@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -11,9 +12,9 @@ from app.infrastructure.models.usuario_model import UsuarioModel
 from app.infrastructure.security.passwords import hash_password, verify_password
 from app.infrastructure.security.tokens import decode_token, encode_token, hash_token
 
-ACCESS_TOKEN_MINUTES = 15
-REFRESH_TOKEN_DAYS = 7
-RESET_TOKEN_MINUTES = 15
+ACCESS_TOKEN_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+REFRESH_TOKEN_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+RESET_TOKEN_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", "15"))
 
 __all__ = [
     "ACCESS_TOKEN_MINUTES",
@@ -42,22 +43,42 @@ def _expiration(token: str, token_type: str) -> datetime:
     return datetime.fromtimestamp(exp, tz=UTC).replace(tzinfo=None)
 
 
-def create_access_token(usuario_id: int) -> str:
-    return encode_token(usuario_id, "access", timedelta(minutes=ACCESS_TOKEN_MINUTES))
+def create_access_token(usuario_id: int, token_version: int = 0) -> str:
+    return encode_token(
+        usuario_id,
+        "access",
+        timedelta(minutes=ACCESS_TOKEN_MINUTES),
+        token_version=token_version,
+    )
 
 
-def create_refresh_token(usuario_id: int, db: Session) -> str:
+def create_refresh_token(
+    usuario_id: int,
+    db: Session,
+    familia_id: str | None = None,
+    token_version: int = 0,
+    commit: bool = True,
+) -> str:
     jti = str(uuid.uuid4())
-    token = encode_token(usuario_id, "refresh", timedelta(days=REFRESH_TOKEN_DAYS), jti)
+    token = encode_token(
+        usuario_id,
+        "refresh",
+        timedelta(days=REFRESH_TOKEN_DAYS),
+        jti,
+        token_version,
+    )
+    familia = familia_id or str(uuid.uuid4())
     db.add(
         RefreshTokenModel(
             jti=jti,
+            familia_id=familia,
             usuario_id=usuario_id,
             token_hash=hash_token(token),
             expira_en=_expiration(token, "refresh"),
         )
     )
-    db.commit()
+    if commit:
+        db.commit()
     return token
 
 
@@ -66,15 +87,31 @@ def rotate_refresh_token(token: str, db: Session) -> tuple[str, str] | None:
         payload = decode_token(token, "refresh")
     except TokenInvalido:
         return None
-    registro = (
-        db.query(RefreshTokenModel)
-        .filter(RefreshTokenModel.jti == payload["jti"], RefreshTokenModel.revocado_en.is_(None))
-        .first()
-    )
+    registro = db.query(RefreshTokenModel).filter(RefreshTokenModel.jti == payload["jti"]).first()
+    if registro is not None and registro.revocado_en is not None:
+        db.query(RefreshTokenModel).filter(
+            RefreshTokenModel.familia_id == registro.familia_id,
+            RefreshTokenModel.revocado_en.is_(None),
+        ).update({"revocado_en": _now().replace(tzinfo=None)})
+        db.commit()
+        return None
     if registro is None or registro.token_hash != hash_token(token):
+        if registro is not None:
+            db.query(RefreshTokenModel).filter(
+                RefreshTokenModel.familia_id == registro.familia_id,
+                RefreshTokenModel.revocado_en.is_(None),
+            ).update({"revocado_en": _now().replace(tzinfo=None)})
+            db.commit()
         return None
     registro.revocado_en = _now().replace(tzinfo=None)
-    nuevo = create_refresh_token(int(payload["sub"]), db)
+    nuevo = create_refresh_token(
+        int(payload["sub"]),
+        db,
+        familia_id=registro.familia_id,
+        token_version=int(payload.get("tv", 0)),
+        commit=False,
+    )
+    db.commit()
     return nuevo, payload["sub"]
 
 
@@ -94,12 +131,13 @@ def revoke_refresh_token(token: str, db: Session) -> bool:
     return True
 
 
-def revoke_all_sessions(usuario_id: int, db: Session) -> None:
+def revoke_all_sessions(usuario_id: int, db: Session, commit: bool = True) -> None:
     db.query(RefreshTokenModel).filter(
         RefreshTokenModel.usuario_id == usuario_id,
         RefreshTokenModel.revocado_en.is_(None),
     ).update({"revocado_en": _now().replace(tzinfo=None)})
-    db.commit()
+    if commit:
+        db.commit()
 
 
 def create_reset_token(usuario: Usuario, db: Session) -> str:
@@ -133,7 +171,14 @@ def reset_password(token: str, new_password: str, db: Session) -> bool:
     if registro is None or usuario is None:
         return False
     usuario.password_hash = hash_password(new_password)
+    usuario.token_version += 1
+    usuario.intentos_fallidos = 0
+    usuario.bloqueado_hasta = None
+    db.query(PasswordResetTokenModel).filter(
+        PasswordResetTokenModel.usuario_id == usuario.id,
+        PasswordResetTokenModel.usado_en.is_(None),
+    ).update({"usado_en": _now().replace(tzinfo=None)})
     registro.usado_en = _now().replace(tzinfo=None)
+    revoke_all_sessions(usuario.id, db, commit=False)
     db.commit()
-    revoke_all_sessions(usuario.id, db)
     return True

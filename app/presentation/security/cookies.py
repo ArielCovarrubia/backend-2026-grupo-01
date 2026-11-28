@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Response
 
 from app.application.services.auth_service import REFRESH_TOKEN_DAYS
@@ -7,11 +9,12 @@ REFRESH_COOKIE_PATH = "/auth"
 
 
 def set_refresh_cookie(response: Response, token: str) -> None:
+    secure = os.getenv("COOKIE_SECURE", "false").strip().lower() == "true"
     response.set_cookie(
         REFRESH_COOKIE,
         token,
         httponly=True,
-        secure=False,
+        secure=secure,
         samesite="strict",
         max_age=REFRESH_TOKEN_DAYS * 86400,
         path=REFRESH_COOKIE_PATH,

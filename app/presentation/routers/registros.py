@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.orm import Session
 
 from app.application.services import registro_service
-from app.presentation.dependencies import get_db, get_usuario_actual
+from app.presentation.dependencies import get_db, get_usuario_actual, require_owner_or_admin
+from app.application.services import habito_service
 from app.presentation.schemas.registro_schema import (
     RegistroHabitoCreate,
     RegistroHabitoResponse,
@@ -29,6 +30,8 @@ router = APIRouter(
     },
 )
 def crear_registro_habito(datos: RegistroHabitoCreate, db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
+    habito = habito_service.obtener_habito(datos.habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     return registro_service.crear_registro_habito(datos, db=db)
 
 
@@ -42,7 +45,9 @@ def crear_registro_habito(datos: RegistroHabitoCreate, db: Session = Depends(get
     },
 )
 def listar_registros_habito(db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
-    return registro_service.listar_registros_habito(db=db)
+    if usuario_actual.role == "admin":
+        return registro_service.listar_registros_habito(db=db)
+    return registro_service.listar_registros_habito(usuario_id=usuario_actual.id, db=db)
 
 
 @router.get(
@@ -60,7 +65,10 @@ def obtener_registro_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
-    return registro_service.obtener_registro_habito(registro_id, db=db)
+    registro = registro_service.obtener_registro_habito(registro_id, db=db)
+    habito = habito_service.obtener_habito(registro.habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
+    return registro
 
 
 @router.put(
@@ -79,6 +87,9 @@ def actualizar_registro_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    registro = registro_service.obtener_registro_habito(registro_id, db=db)
+    habito = habito_service.obtener_habito(registro.habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     return registro_service.actualizar_registro_habito(registro_id, datos, db=db)
 
 
@@ -97,4 +108,7 @@ def eliminar_registro_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    registro = registro_service.obtener_registro_habito(registro_id, db=db)
+    habito = habito_service.obtener_habito(registro.habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     registro_service.eliminar_registro_habito(registro_id, db=db)
