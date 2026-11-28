@@ -5,17 +5,19 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class UsuarioCreate(BaseModel):
     model_config = ConfigDict(
-        str_strip_whitespace=True,
+        extra="forbid",
+        str_strip_whitespace=False,
         json_schema_extra={"examples": [{"name": "Ana Pérez", "email": "ana.perez@uct.cl"}]},
     )
 
     name: str = Field(..., min_length=2, max_length=60)
     email: EmailStr
-    password: str | None = Field(default=None, min_length=8, max_length=128)
+    password: str | None = Field(default=None, min_length=12, max_length=128)
 
 
 class UsuarioUpdate(BaseModel):
     model_config = ConfigDict(
+        extra="forbid",
         str_strip_whitespace=True,
         json_schema_extra={"examples": [{"name": "Ana María Pérez"}]},
     )

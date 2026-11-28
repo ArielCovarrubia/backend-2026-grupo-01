@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.orm import Session
 
 from app.application.services import usuario_service
-from app.presentation.dependencies import get_db, get_usuario_actual
+from app.presentation.dependencies import get_db, get_usuario_actual, require_owner_or_admin
 from app.presentation.schemas.usuario_schema import (
     UsuarioCreate,
     UsuarioResponse,
@@ -41,6 +41,8 @@ def crear_usuario(datos: UsuarioCreate, db: Session = Depends(get_db)):
     },
 )
 def listar_usuarios(db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
+    if usuario_actual.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Se requiere rol administrador.")
     return usuario_service.listar_usuarios(db=db)
 
 
@@ -59,6 +61,7 @@ def obtener_usuario(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    require_owner_or_admin(usuario_actual, usuario_id)
     return usuario_service.obtener_usuario(usuario_id, db=db)
 
 
@@ -79,6 +82,7 @@ def actualizar_usuario(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    require_owner_or_admin(usuario_actual, usuario_id)
     return usuario_service.actualizar_usuario(usuario_id, datos, db=db)
 
 
@@ -98,4 +102,5 @@ def eliminar_usuario(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    require_owner_or_admin(usuario_actual, usuario_id)
     usuario_service.eliminar_usuario(usuario_id, db=db)

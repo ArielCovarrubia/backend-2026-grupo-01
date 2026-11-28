@@ -5,6 +5,7 @@ from app.domain.registro_habito import RegistroHabito
 from app.infrastructure.database import SessionLocal
 from app.infrastructure.mappers.registro_mapper import registro_a_dominio, registro_a_modelo
 from app.infrastructure.models.registro_model import RegistroHabitoModel
+from app.infrastructure.models.habito_model import HabitoModel
 
 _registros: dict[int, RegistroHabito] = {}
 _contador_id = 0
@@ -36,6 +37,22 @@ def listar(db: Session | None = None) -> list[RegistroHabito]:
     s, close = _get_session(db)
     try:
         modelos = s.query(RegistroHabitoModel).order_by(RegistroHabitoModel.id.asc()).all()
+        return [registro_a_dominio(m) for m in modelos]
+    finally:
+        if close:
+            s.close()
+
+
+def listar_por_usuario(usuario_id: int, db: Session | None = None) -> list[RegistroHabito]:
+    s, close = _get_session(db)
+    try:
+        modelos = (
+            s.query(RegistroHabitoModel)
+            .join(HabitoModel, HabitoModel.id == RegistroHabitoModel.habito_id)
+            .filter(HabitoModel.usuario_id == usuario_id)
+            .order_by(RegistroHabitoModel.id.asc())
+            .all()
+        )
         return [registro_a_dominio(m) for m in modelos]
     finally:
         if close:

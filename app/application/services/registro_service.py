@@ -1,10 +1,11 @@
 from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
 from app.domain.exceptions import ConflictoError, RecursoNoEncontradoError, ReglaNegocioError
 from app.domain.habito import EstadoHabito
 from app.domain.registro_habito import RegistroHabito
-from app.infrastructure.repositories import habito_repository, registro_repository
+from app.infrastructure.repositories import habito_repository, registro_repository, usuario_repository
 from app.presentation.schemas.registro_schema import RegistroHabitoCreate, RegistroHabitoUpdate
 
 
@@ -15,8 +16,13 @@ def crear_registro_habito(datos: RegistroHabitoCreate, db: Session | None = None
 
     if habito.estado == EstadoHabito.ARCHIVADO:
         raise ReglaNegocioError("No se pueden crear registros para un hábito archivado.")
+    if habito.estado == EstadoHabito.PAUSADO:
+        raise ReglaNegocioError("No se pueden crear registros para un hábito pausado.")
 
-    if datos.fecha_registro > date.today():
+    usuario = usuario_repository.obtener(habito.usuario_id, db=db)
+    zona = ZoneInfo(usuario.zona_horaria if usuario and usuario.zona_horaria else "UTC")
+    hoy_usuario = datetime.now(zona).date()
+    if datos.fecha_registro > hoy_usuario:
         raise ReglaNegocioError("La fecha de registro no puede ser futura.")
 
     if registro_repository.existe_registro_en_fecha(datos.habito_id, datos.fecha_registro, db=db):
@@ -34,7 +40,12 @@ def crear_registro_habito(datos: RegistroHabitoCreate, db: Session | None = None
     return registro_repository.guardar(registro, db=db)
 
 
-def listar_registros_habito(db: Session | None = None) -> list[RegistroHabito]:
+def listar_registros_habito(
+    usuario_id: int | None = None,
+    db: Session | None = None,
+) -> list[RegistroHabito]:
+    if usuario_id is not None:
+        return registro_repository.listar_por_usuario(usuario_id, db=db)
     return registro_repository.listar(db=db)
 
 
@@ -50,13 +61,14 @@ def actualizar_registro_habito(registro_id: int, datos: RegistroHabitoUpdate, db
     if registro is None:
         raise RecursoNoEncontradoError("Registro no encontrado.")
 
-    if datos.completado is not None:
+    cambios = datos.model_fields_set
+    if "completado" in cambios:
         registro.completado = datos.completado
 
-    if datos.valor_medido is not None:
+    if "valor_medido" in cambios:
         registro.valor_medido = datos.valor_medido
 
-    if datos.nota is not None:
+    if "nota" in cambios:
         registro.nota = datos.nota
 
     return registro_repository.actualizar(registro_id, registro, db=db)

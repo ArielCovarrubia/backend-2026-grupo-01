@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.orm import Session
 
 from app.application.services import habito_service
-from app.presentation.dependencies import get_db, get_usuario_actual
+from app.presentation.dependencies import get_db, get_usuario_actual, require_owner_or_admin
 from app.presentation.schemas.habito_schema import (
     HabitoCreate,
     HabitoPaginadoResponse,
@@ -30,6 +30,10 @@ router = APIRouter(
     },
 )
 def crear_habito(datos: HabitoCreate, db: Session = Depends(get_db), usuario_actual=Depends(get_usuario_actual)):
+    if usuario_actual.role != "admin":
+        require_owner_or_admin(usuario_actual, datos.usuario_id)
+    else:
+        datos.usuario_id = datos.usuario_id
     return habito_service.crear_habito(datos, db=db)
 
 
@@ -44,8 +48,8 @@ def crear_habito(datos: HabitoCreate, db: Session = Depends(get_db), usuario_act
     },
 )
 def listar_habitos(
-    usuario_id: int | None = Query(None, description="Filtrar por ID de usuario"),
-    categoria_id: int | None = Query(None, description="Filtrar por ID de categoría"),
+    usuario_id: int | None = Query(None, ge=1, description="Filtrar por ID de usuario"),
+    categoria_id: int | None = Query(None, ge=1, description="Filtrar por ID de categoría"),
     estado: str | None = Query(None, description="Filtrar por estado (ACTIVO, PAUSADO, ARCHIVADO)"),
     ordenar_por: str | None = Query(None, description="Atributo para ordenar: nombre, frecuencia_semanal, fecha_creacion"),
     orden: str | None = Query(None, description="Alias compatible de ordenar_por"),
@@ -56,8 +60,11 @@ def listar_habitos(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    filtro_usuario = usuario_id
+    if usuario_actual.role != "admin":
+        filtro_usuario = usuario_actual.id
     return habito_service.listar_habitos_paginado(
-        usuario_id=usuario_id,
+        usuario_id=filtro_usuario,
         categoria_id=categoria_id,
         estado=estado,
         ordenar_por=ordenar_por,
@@ -85,7 +92,9 @@ def obtener_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
-    return habito_service.obtener_habito(habito_id, db=db)
+    habito = habito_service.obtener_habito(habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
+    return habito
 
 
 @router.put(
@@ -106,6 +115,8 @@ def actualizar_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    habito = habito_service.obtener_habito(habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     return habito_service.actualizar_habito(habito_id, datos, db=db)
 
 
@@ -124,6 +135,8 @@ def eliminar_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    habito = habito_service.obtener_habito(habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     habito_service.eliminar_habito(habito_id, db=db)
 
 
@@ -133,4 +146,6 @@ def desarchivar_habito(
     db: Session = Depends(get_db),
     usuario_actual=Depends(get_usuario_actual),
 ):
+    habito = habito_service.obtener_habito(habito_id, db=db)
+    require_owner_or_admin(usuario_actual, habito.usuario_id)
     return habito_service.desarchivar_habito(habito_id, db=db)

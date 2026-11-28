@@ -1,4 +1,7 @@
+import os
+
 from fastapi import FastAPI, Request
+from sqlalchemy.exc import IntegrityError
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -33,8 +36,12 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+        origen.strip()
+        for origen in os.getenv(
+            "CORS_ALLOWED_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173",
+        ).split(",")
+        if origen.strip()
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
@@ -93,6 +100,34 @@ async def dominio_generico_handler(request: Request, exc: DominioException):
                 "code": exc.code,
                 "message": exc.message,
                 "details": exc.details,
+            }
+        },
+    )
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_handler(request: Request, exc: IntegrityError):
+    return JSONResponse(
+        status_code=409,
+        content={
+            "error": {
+                "code": "CONFLICT",
+                "message": "El recurso entra en conflicto con datos existentes.",
+                "details": [],
+            }
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": {
+                "code": "INTERNAL_ERROR",
+                "message": "Error interno del servidor.",
+                "details": [],
             }
         },
     )
@@ -157,7 +192,29 @@ ESQUEMA_ERROR = {
     },
 }
 
+ESQUEMA_SEGURIDAD = {
+    "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+    }
+}
+
 EJEMPLOS_ERROR = {
+    "401": {
+        "error": {
+            "code": "HTTP_ERROR",
+            "message": "Credenciales requeridas.",
+            "details": [],
+        }
+    },
+    "403": {
+        "error": {
+            "code": "HTTP_ERROR",
+            "message": "No tienes permiso para operar sobre este recurso.",
+            "details": [],
+        }
+    },
     "400": {
         "error": {
             "code": "BUSINESS_RULE_ERROR",
@@ -205,8 +262,28 @@ def generar_openapi():
         description=app.description,
         routes=app.routes,
     )
-    for operaciones in esquema["paths"].values():
-        for operacion in operaciones.values():
+    esquema["components"]["securitySchemes"] = ESQUEMA_SEGURIDAD
+    rutas_publicas = {
+        "/health",
+        "/auth/login",
+        "/auth/refresh",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+        "/usuarios/",
+    }
+    for ruta, operaciones in esquema["paths"].items():
+        for metodo, operacion in operaciones.items():
+            if metodo.lower() in {"get", "post", "put", "delete", "patch"}:
+                publicacion = ruta in rutas_publicas
+                if ruta == "/auth/logout":
+                    publicacion = True
+                if not publicacion:
+                    operacion.setdefault("security", [{"bearerAuth": []}])
+                if "401" not in operacion["responses"] and not publicacion:
+                    operacion["responses"]["401"] = {"description": "Credenciales requeridas o token inválido."}
+                if "403" not in operacion["responses"] and not publicacion:
+                    operacion["responses"]["403"] = {"description": "Permisos insuficientes."}
+                operacion["responses"].setdefault("500", {"description": "Error interno del servidor."})
             for codigo, respuesta in operacion.get("responses", {}).items():
                 if codigo in EJEMPLOS_ERROR:
                     respuesta["content"] = {

@@ -20,8 +20,8 @@ class HabitoCreate(BaseModel):
         },
     )
 
-    usuario_id: int
-    categoria_id: int
+    usuario_id: int = Field(..., ge=1)
+    categoria_id: int = Field(..., ge=1)
     nombre: str = Field(..., min_length=3, max_length=50)
     frecuencia_semanal: int = Field(..., ge=1, le=7)
 
@@ -34,7 +34,7 @@ class HabitoUpdate(BaseModel):
 
     nombre: str | None = Field(default=None, min_length=3, max_length=50)
     frecuencia_semanal: int | None = Field(default=None, ge=1, le=7)
-    categoria_id: int | None = None
+    categoria_id: int | None = Field(default=None, ge=1)
     estado: EstadoHabito | None = None
 
 

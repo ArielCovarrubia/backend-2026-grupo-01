@@ -18,8 +18,8 @@ class RegistroHabitoCreate(BaseModel):
             ]
         },
     )
-    habito_id: int
-    fecha_registro: date
+    habito_id: int = Field(..., ge=1)
+    fecha_registro: date = Field(..., ge=date(1900, 1, 1))
     completado: bool = True
     valor_medido: float | None = Field(default=None, ge=0)
     nota: str | None = Field(default=None, min_length=1, max_length=200)

@@ -1,4 +1,5 @@
 import os
+os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-at-least-32-characters")
 from datetime import date, timedelta
 
 import pytest

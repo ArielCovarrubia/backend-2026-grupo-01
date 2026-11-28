@@ -19,6 +19,8 @@ def get_usuario_actual(
     try:
         payload = decode_token(credentials.credentials, "access")
         usuario = usuario_repository.obtener(int(payload["sub"]), db=db)
+        if usuario is not None and int(payload.get("tv", usuario.token_version)) != usuario.token_version:
+            usuario = None
     except (ValueError, TypeError, TokenInvalido):
         usuario = None
     if usuario is None:
@@ -31,4 +33,17 @@ def get_admin_actual(usuario=Depends(get_usuario_actual)):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Se requieren permisos de administrador.")
     return usuario
 
-__all__ = ["get_db", "get_usuario_actual", "get_admin_actual"]
+
+def require_owner_or_admin(usuario_actual, propietario_id: int) -> None:
+    if usuario_actual.role != "admin" and usuario_actual.id != propietario_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para operar sobre este recurso.",
+        )
+
+__all__ = [
+    "get_db",
+    "get_usuario_actual",
+    "get_admin_actual",
+    "require_owner_or_admin",
+]

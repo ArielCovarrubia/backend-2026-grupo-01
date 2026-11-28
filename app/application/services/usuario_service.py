@@ -37,10 +37,11 @@ def actualizar_usuario(usuario_id: int, datos: UsuarioUpdate, db: Session | None
     if usuario_actual is None:
         raise RecursoNoEncontradoError(f"No existe un usuario con el ID {usuario_id}.")
 
-    if datos.name is not None:
+    cambios = datos.model_fields_set
+    if "name" in cambios:
         usuario_actual.name = datos.name
 
-    if datos.email is not None:
+    if "email" in cambios:
         usuario_con_email = usuario_repository.obtener_por_email(str(datos.email), db=db)
         if usuario_con_email is not None and usuario_con_email.id != usuario_id:
             raise ConflictoError("El correo electrónico ya está en uso por otro usuario.")

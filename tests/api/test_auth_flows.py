@@ -32,7 +32,10 @@ def test_register_login_bearer_logout_and_reject_refresh(client_sin_login):
 
 
 @pytest.mark.api
-def test_password_recovery_is_single_use_and_updates_login(client_sin_login):
+def test_password_recovery_is_single_use_and_updates_login(client_sin_login, session):
+    from app.application.services.auth_service import create_reset_token
+    from app.infrastructure.repositories import usuario_repository
+
     client_sin_login.post(
         "/usuarios/",
         json={
@@ -46,7 +49,9 @@ def test_password_recovery_is_single_use_and_updates_login(client_sin_login):
         "/auth/forgot-password", json={"email": "e2e-recovery@x.cl"}
     )
     assert recovery.status_code == 200
-    reset_token = recovery.json()["token"]
+    assert "token" not in recovery.json()
+    usuario = usuario_repository.obtener_por_email("e2e-recovery@x.cl", db=session)
+    reset_token = create_reset_token(usuario, session)
     reset_body = {"token": reset_token, "password": "new-password-123"}
 
     changed = client_sin_login.post("/auth/reset-password", json=reset_body)

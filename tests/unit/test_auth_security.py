@@ -7,7 +7,6 @@ from pydantic import ValidationError
 from app.domain.exceptions import TokenInvalido
 
 
-@pytest.mark.xfail(reason="RegistroDTO with the required password policy is pending.")
 def test_registration_dto_rejects_short_password():
     schema = importlib.import_module("app.presentation.schemas.auth_schema")
     registration_dto = vars(schema)["RegistroDTO"]
@@ -15,7 +14,6 @@ def test_registration_dto_rejects_short_password():
         registration_dto(name="Ana Example", email="ana@example.test", password="short")
 
 
-@pytest.mark.xfail(reason="RegistroDTO with forbidden extra fields is pending.")
 def test_registration_dto_forbids_extra_fields():
     schema = importlib.import_module("app.presentation.schemas.auth_schema")
     registration_dto = vars(schema)["RegistroDTO"]
